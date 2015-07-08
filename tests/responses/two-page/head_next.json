@@ -1,0 +1,89 @@
+{
+  "title": "Event stream 'stock'",
+  "id": "http://127.0.0.1:2113/streams/stock",
+  "updated": "2015-04-28T19:51:50.667627Z",
+  "streamId": "stock",
+  "author": {
+    "name": "EventStore"
+  },
+  "headOfStream": false,
+  "selfUrl": "http://127.0.0.1:2113/streams/stock",
+  "links": [
+    {
+      "uri": "http://127.0.0.1:2113/streams/stock",
+      "relation": "self"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/stock/head/backward/20",
+      "relation": "first"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/stock/64/forward/20",
+      "relation": "previous"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/stock/metadata",
+      "relation": "metadata"
+    }
+  ],
+  "entries": [
+    {
+      "eventId": "48e22378-8429-443a-99f9-a64ec4291b0f",
+      "eventType": "stock-received",
+      "eventNumber": 63,
+      "data": "{\n  \"sku\": \"abc123\",\n  \"qty\": \"10\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 63,
+      "positionStreamId": "stock",
+      "title": "63@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/63",
+      "updated": "2015-04-28T19:51:50.667627Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/63",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/63",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "1a3b9e6e-a90b-48e0-a743-4099194f56e6",
+      "eventType": "stock-received",
+      "eventNumber": 62,
+      "data": "{\n  \"qty\": \"10\",\n  \"sku\": \"abc123\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 62,
+      "positionStreamId": "stock",
+      "title": "62@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/62",
+      "updated": "2015-04-28T19:51:49.644211Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/62",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/62",
+          "relation": "alternate"
+        }
+      ]
+    }
+  ]
+}

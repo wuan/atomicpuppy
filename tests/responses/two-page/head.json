@@ -1,0 +1,620 @@
+{
+  "title": "Event stream 'stock'",
+  "id": "http://127.0.0.1:2113/streams/stock",
+  "updated": "2015-04-28T19:54:31.029991Z",
+  "streamId": "stock",
+  "author": {
+    "name": "EventStore"
+  },
+  "headOfStream": true,
+  "selfUrl": "http://127.0.0.1:2113/streams/stock",
+  "eTag": "83;248368668",
+  "links": [
+    {
+      "uri": "http://127.0.0.1:2113/streams/stock",
+      "relation": "self"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/stock/head/backward/20",
+      "relation": "first"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/stock/0/forward/20",
+      "relation": "last"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/stock/63/backward/20",
+      "relation": "next"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/stock/84/forward/20",
+      "relation": "previous"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/stock/metadata",
+      "relation": "metadata"
+    }
+  ],
+  "entries": [
+    {
+      "eventId": "7b652739-93de-4e18-ad01-fea99cabf3fc",
+      "eventType": "stock-received",
+      "eventNumber": 83,
+      "data": "{\n  \"sku\": \"abc123\",\n  \"qty\": \"10\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 83,
+      "positionStreamId": "stock",
+      "title": "83@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/83",
+      "updated": "2015-04-28T19:54:31.029991Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/83",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/83",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "130efa2b-6e40-4103-b063-b86930c7477d",
+      "eventType": "stock-received",
+      "eventNumber": 82,
+      "data": "{\n  \"sku\": \"abc123\",\n  \"qty\": \"10\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 82,
+      "positionStreamId": "stock",
+      "title": "82@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/82",
+      "updated": "2015-04-28T19:52:05.400599Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/82",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/82",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "b1f434ad-f889-434b-9c4c-1fddb5382cf0",
+      "eventType": "stock-received",
+      "eventNumber": 81,
+      "data": "{\n  \"sku\": \"abc123\",\n  \"qty\": \"10\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 81,
+      "positionStreamId": "stock",
+      "title": "81@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/81",
+      "updated": "2015-04-28T19:52:04.703173Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/81",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/81",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "2088c166-380f-425b-93e2-763338bd1163",
+      "eventType": "stock-received",
+      "eventNumber": 80,
+      "data": "{\n  \"qty\": \"10\",\n  \"sku\": \"abc123\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 80,
+      "positionStreamId": "stock",
+      "title": "80@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/80",
+      "updated": "2015-04-28T19:52:03.983307Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/80",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/80",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "362fac39-f2e9-434a-af53-6cbf7740c72a",
+      "eventType": "stock-received",
+      "eventNumber": 79,
+      "data": "{\n  \"sku\": \"abc123\",\n  \"qty\": \"10\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 79,
+      "positionStreamId": "stock",
+      "title": "79@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/79",
+      "updated": "2015-04-28T19:52:03.255116Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/79",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/79",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "9281fa13-8a6a-46fa-9eb5-a235fccb5f8c",
+      "eventType": "stock-received",
+      "eventNumber": 78,
+      "data": "{\n  \"sku\": \"abc123\",\n  \"qty\": \"10\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 78,
+      "positionStreamId": "stock",
+      "title": "78@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/78",
+      "updated": "2015-04-28T19:52:02.192615Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/78",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/78",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "eaed524f-727f-4b5a-aa97-5a689326af97",
+      "eventType": "stock-received",
+      "eventNumber": 77,
+      "data": "{\n  \"sku\": \"abc123\",\n  \"qty\": \"10\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 77,
+      "positionStreamId": "stock",
+      "title": "77@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/77",
+      "updated": "2015-04-28T19:52:01.472696Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/77",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/77",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "d094db70-ed9d-4be6-a767-2e844e24dd46",
+      "eventType": "stock-received",
+      "eventNumber": 76,
+      "data": "{\n  \"qty\": \"10\",\n  \"sku\": \"abc123\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 76,
+      "positionStreamId": "stock",
+      "title": "76@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/76",
+      "updated": "2015-04-28T19:52:00.721228Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/76",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/76",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "55ca0f6a-5488-48a7-b4e0-753daebc5950",
+      "eventType": "stock-received",
+      "eventNumber": 75,
+      "data": "{\n  \"sku\": \"abc123\",\n  \"qty\": \"10\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 75,
+      "positionStreamId": "stock",
+      "title": "75@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/75",
+      "updated": "2015-04-28T19:51:59.951403Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/75",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/75",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "3f8474d2-306f-472a-8d0c-324b6a7561b8",
+      "eventType": "stock-received",
+      "eventNumber": 74,
+      "data": "{\n  \"qty\": \"10\",\n  \"sku\": \"abc123\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 74,
+      "positionStreamId": "stock",
+      "title": "74@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/74",
+      "updated": "2015-04-28T19:51:59.211482Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/74",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/74",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "0c2774ff-6e93-4f3b-bcfc-bd1191db6748",
+      "eventType": "stock-received",
+      "eventNumber": 73,
+      "data": "{\n  \"sku\": \"abc123\",\n  \"qty\": \"10\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 73,
+      "positionStreamId": "stock",
+      "title": "73@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/73",
+      "updated": "2015-04-28T19:51:58.404176Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/73",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/73",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "a8c6aa9b-2c5d-4557-80be-d2f49d2537ab",
+      "eventType": "stock-received",
+      "eventNumber": 72,
+      "data": "{\n  \"qty\": \"10\",\n  \"sku\": \"abc123\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 72,
+      "positionStreamId": "stock",
+      "title": "72@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/72",
+      "updated": "2015-04-28T19:51:57.672582Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/72",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/72",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "349dfc71-57e4-4a0d-887c-2474f2045890",
+      "eventType": "stock-received",
+      "eventNumber": 71,
+      "data": "{\n  \"qty\": \"10\",\n  \"sku\": \"abc123\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 71,
+      "positionStreamId": "stock",
+      "title": "71@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/71",
+      "updated": "2015-04-28T19:51:56.890981Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/71",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/71",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "09dc98cd-68ca-4926-b333-6aa2a8dd93b6",
+      "eventType": "stock-received",
+      "eventNumber": 70,
+      "data": "{\n  \"sku\": \"abc123\",\n  \"qty\": \"10\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 70,
+      "positionStreamId": "stock",
+      "title": "70@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/70",
+      "updated": "2015-04-28T19:51:56.154821Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/70",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/70",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "7af92f71-fc1a-4425-b7dc-d3730cb55021",
+      "eventType": "stock-received",
+      "eventNumber": 69,
+      "data": "{\n  \"qty\": \"10\",\n  \"sku\": \"abc123\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 69,
+      "positionStreamId": "stock",
+      "title": "69@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/69",
+      "updated": "2015-04-28T19:51:55.379489Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/69",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/69",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "e4a5dde4-4d3d-40ed-930f-cab67ded4369",
+      "eventType": "stock-received",
+      "eventNumber": 68,
+      "data": "{\n  \"sku\": \"abc123\",\n  \"qty\": \"10\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 68,
+      "positionStreamId": "stock",
+      "title": "68@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/68",
+      "updated": "2015-04-28T19:51:54.553336Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/68",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/68",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "48ec5282-20d9-456e-a027-d9a7b46b1ef4",
+      "eventType": "stock-received",
+      "eventNumber": 67,
+      "data": "{\n  \"qty\": \"10\",\n  \"sku\": \"abc123\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 67,
+      "positionStreamId": "stock",
+      "title": "67@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/67",
+      "updated": "2015-04-28T19:51:53.689384Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/67",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/67",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "d5aa063b-e570-4cc9-99c0-8eb992fa820b",
+      "eventType": "stock-received",
+      "eventNumber": 66,
+      "data": "{\n  \"qty\": \"10\",\n  \"sku\": \"abc123\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 66,
+      "positionStreamId": "stock",
+      "title": "66@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/66",
+      "updated": "2015-04-28T19:51:52.884307Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/66",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/66",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "175692d3-b257-42f0-8c16-037e15997978",
+      "eventType": "stock-received",
+      "eventNumber": 65,
+      "data": "{\n  \"qty\": \"10\",\n  \"sku\": \"abc123\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 65,
+      "positionStreamId": "stock",
+      "title": "65@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/65",
+      "updated": "2015-04-28T19:51:52.12219Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/65",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/65",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "66fb9531-2854-4775-a699-aaf42640c65c",
+      "eventType": "stock-received",
+      "eventNumber": 64,
+      "data": "{\n  \"sku\": \"abc123\",\n  \"qty\": \"10\"\n}",
+      "streamId": "stock",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 64,
+      "positionStreamId": "stock",
+      "title": "64@stock",
+      "id": "http://127.0.0.1:2113/streams/stock/64",
+      "updated": "2015-04-28T19:51:51.431271Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "stock-received",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/64",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/stock/64",
+          "relation": "alternate"
+        }
+      ]
+    }
+  ]
+}

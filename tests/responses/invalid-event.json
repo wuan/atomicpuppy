@@ -1,0 +1,61 @@
+{
+  "title": "Event stream 'newstream'",
+  "id": "http://127.0.0.1:2113/streams/newstream",
+  "updated": "2015-04-28T14:14:24.134746Z",
+  "streamId": "newstream",
+  "author": {
+    "name": "EventStore"
+  },
+  "headOfStream": true,
+  "selfUrl": "http://127.0.0.1:2113/streams/newstream",
+  "eTag": "0;248368668",
+  "links": [
+    {
+      "uri": "http://127.0.0.1:2113/streams/newstream",
+      "relation": "self"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/newstream/head/backward/20",
+      "relation": "first"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/newstream/1/forward/20",
+      "relation": "previous"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/newstream/metadata",
+      "relation": "metadata"
+    }
+  ],
+  "entries": [
+    {
+      "eventId": "fbf4a1a1-b4a3-4dfe-a01f-ec52c34e16e4",
+      "eventType": "my-event",
+      "eventNumber": 0,
+      "data": "THIS IS NOT A JSON BLOB",
+      "streamId": "newstream",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 0,
+      "positionStreamId": "newstream",
+      "title": "0@newstream",
+      "id": "http://127.0.0.1:2113/streams/newstream/0",
+      "updated": "2015-04-28T14:14:24.134746Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "event-type",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/newstream/0",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/newstream/0",
+          "relation": "alternate"
+        }
+      ]
+    }
+  ]
+}

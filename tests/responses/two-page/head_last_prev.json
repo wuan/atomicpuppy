@@ -1,0 +1,37 @@
+{
+  "title": "Event stream 'stock'",
+  "id": "http://127.0.0.1:2113/streams/stock",
+  "updated": "0001-01-01T00:00:00Z",
+  "streamId": "stock",
+  "author": {
+    "name": "EventStore"
+  },
+  "headOfStream": false,
+  "links": [
+    {
+      "uri": "http://127.0.0.1:2113/streams/stock",
+      "relation": "self"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/stock/head/backward/20",
+      "relation": "first"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/stock/0/forward/20",
+      "relation": "last"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/stock/19/backward/20",
+      "relation": "next"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/stock/40/forward/20",
+      "relation": "previous"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/stock/metadata",
+      "relation": "metadata"
+    }
+  ],
+  "entries": []
+}

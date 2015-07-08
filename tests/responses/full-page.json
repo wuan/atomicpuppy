@@ -1,0 +1,696 @@
+{
+  "title": "Event stream 'batches'",
+  "id": "http://10.35.0.157:2113/streams/batches",
+  "updated": "2015-04-27T14:28:11.5637Z",
+  "streamId": "batches",
+  "author": {
+    "name": "EventStore"
+  },
+  "headOfStream": true,
+  "selfUrl": "http://10.35.0.157:2113/streams/batches",
+  "eTag": "139;248368668",
+  "links": [
+    {
+      "uri": "http://10.35.0.157:2113/streams/batches",
+      "relation": "self"
+    },
+    {
+      "uri": "http://10.35.0.157:2113/streams/batches/head/backward/20",
+      "relation": "first"
+    },
+    {
+      "uri": "http://10.35.0.157:2113/streams/batches/0/forward/20",
+      "relation": "last"
+    },
+    {
+      "uri": "http://10.35.0.157:2113/streams/batches/119/backward/20",
+      "relation": "next"
+    },
+    {
+      "uri": "http://10.35.0.157:2113/streams/batches/140/forward/20",
+      "relation": "previous"
+    },
+    {
+      "uri": "http://10.35.0.157:2113/streams/batches/metadata",
+      "relation": "metadata"
+    }
+  ],
+  "entries": [
+    {
+      "title": "139@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/139",
+      "updated": "2015-04-27T14:28:11.5637Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "batch_created",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 139,
+        "eventType": "batch_created",
+        "data": {
+          "sud": "2015-06-14",
+          "unallocated_quantity": 22,
+          "shipment_state": "shipping",
+          "warehouse_id": "dooley-rumble",
+          "product_sku": "CTBSPN001ZNA-UK",
+          "batch_id": "e1c8ff53-f83a-46c1-9b5b-7c4743a0c79c"
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/139",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/139",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "title": "138@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/138",
+      "updated": "2015-04-27T14:00:34.271813Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "batch_created",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 138,
+        "eventType": "batch_created",
+        "data": {
+          "sud": "2015-06-14",
+          "unallocated_quantity": 50,
+          "shipment_state": "shipping",
+          "warehouse_id": "dooley-rumble",
+          "product_sku": "CHAFTY003LIM-UK",
+          "batch_id": "183aa26c-6f77-41de-8e43-0684b039c3aa"
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/138",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/138",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "title": "137@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/137",
+      "updated": "2015-04-27T14:00:33.997059Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "batch_created",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 137,
+        "eventType": "batch_created",
+        "data": {
+          "sud": "2015-06-14",
+          "unallocated_quantity": 25,
+          "shipment_state": "shipping",
+          "warehouse_id": "dooley-rumble",
+          "product_sku": "CHAFTY004RED-UK",
+          "batch_id": "a51be208-25e5-41b8-a598-ec299a20ef96"
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/137",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/137",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "title": "136@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/136",
+      "updated": "2015-04-27T13:50:27.341451Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "batch_created",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 136,
+        "eventType": "batch_created",
+        "data": {
+          "sud": "2015-06-14",
+          "unallocated_quantity": 100,
+          "shipment_state": "shipping",
+          "warehouse_id": "dooley-rumble",
+          "product_sku": "CHAFTY003LIM-UK",
+          "batch_id": "ba37ee72-b3bd-41dc-9e2e-fb9aec2d665f"
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/136",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/136",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "title": "135@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/135",
+      "updated": "2015-04-27T13:50:27.11733Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "batch_created",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 135,
+        "eventType": "batch_created",
+        "data": {
+          "sud": "2015-06-14",
+          "unallocated_quantity": 50,
+          "shipment_state": "shipping",
+          "warehouse_id": "dooley-rumble",
+          "product_sku": "CHAFTY004RED-UK",
+          "batch_id": "3be8b59e-0015-404b-8c68-cf2977ae7e2e"
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/135",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/135",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "title": "134@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/134",
+      "updated": "2015-04-27T13:33:13.875234Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "batch_created",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 134,
+        "eventType": "batch_created",
+        "data": {
+          "sud": "2015-06-11",
+          "unallocated_quantity": 22,
+          "shipment_state": "manufacturing",
+          "warehouse_id": "dooley-rumble",
+          "product_sku": "CHAFTY002BLA-UK",
+          "batch_id": "e0b33cb8-7336-4904-8320-c525b32a82a4"
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/134",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/134",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "title": "133@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/133",
+      "updated": "2015-04-27T13:33:13.646715Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "batch_created",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 133,
+        "eventType": "batch_created",
+        "data": {
+          "sud": "2015-06-11",
+          "unallocated_quantity": 11,
+          "shipment_state": "manufacturing",
+          "warehouse_id": "dooley-rumble",
+          "product_sku": "CHAFTY002BLA-UK",
+          "batch_id": "f587691c-af9e-4796-9419-6d717a7e4afb"
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/133",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/133",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "title": "132@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/132",
+      "updated": "2015-04-27T11:32:00.383921Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "batch_created",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 132,
+        "eventType": "batch_created",
+        "data": {
+          "sud": "2015-05-14",
+          "unallocated_quantity": 3,
+          "shipment_state": "shipping",
+          "warehouse_id": "orium",
+          "product_sku": "CTBSPN001ZNA-UK",
+          "batch_id": "3691fc4d-3f91-4b27-a5b6-587d438426db"
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/132",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/132",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "title": "131@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/131",
+      "updated": "2015-04-27T11:25:05.525438Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "batch_created",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 131,
+        "eventType": "batch_created",
+        "data": {
+          "sud": "2015-05-14",
+          "unallocated_quantity": 5,
+          "shipment_state": "shipping",
+          "warehouse_id": "orium",
+          "product_sku": "CHAFTY004RED-UK",
+          "batch_id": "b975f711-3a26-4324-b1e7-5e0c0a145661"
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/131",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/131",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "title": "130@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/130",
+      "updated": "2015-04-27T11:12:37.297424Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "batch_created",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 130,
+        "eventType": "batch_created",
+        "data": {
+          "sud": "2015-06-17",
+          "unallocated_quantity": 5,
+          "shipment_state": "manufacturing",
+          "warehouse_id": "orium",
+          "product_sku": "SOFRTC006GRY-UK",
+          "batch_id": "2856b3ca-888d-4451-9249-318dba9f21b6"
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/130",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/130",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "title": "129@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/129",
+      "updated": "2015-04-27T11:12:36.533221Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "batch_created",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 129,
+        "eventType": "batch_created",
+        "data": {
+          "sud": "2015-05-14",
+          "unallocated_quantity": 13,
+          "shipment_state": "shipping",
+          "warehouse_id": "orium",
+          "product_sku": "CHAFTY004RED-UK",
+          "batch_id": "74ff6b39-fb93-45b2-8ba4-5b4b8543773d"
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/129",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/129",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "title": "128@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/128",
+      "updated": "2015-04-27T11:12:36.299334Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "batch_created",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 128,
+        "eventType": "batch_created",
+        "data": {
+          "sud": "2015-05-14",
+          "unallocated_quantity": 12,
+          "shipment_state": "shipping",
+          "warehouse_id": "orium",
+          "product_sku": "CHAFTY004RED-UK",
+          "batch_id": "9880e270-8186-4018-8181-e6305dfd392a"
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/128",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/128",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "title": "127@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/127",
+      "updated": "2015-04-27T11:02:21.148827Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "batch_created",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 127,
+        "eventType": "batch_created",
+        "data": {
+          "sud": "2015-05-14",
+          "unallocated_quantity": 20,
+          "shipment_state": "shipping",
+          "warehouse_id": "orium",
+          "product_sku": "CHAFTY003LIM-UK",
+          "batch_id": "506af710-805a-4939-a61f-9d07b6f5934f"
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/127",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/127",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "title": "126@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/126",
+      "updated": "2015-04-27T11:02:20.91071Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "batch_created",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 126,
+        "eventType": "batch_created",
+        "data": {
+          "sud": "2015-05-14",
+          "unallocated_quantity": 10,
+          "shipment_state": "shipping",
+          "warehouse_id": "orium",
+          "product_sku": "CHAFTY003LIM-UK",
+          "batch_id": "c4f96d4c-35f2-45b6-b10c-ce5565f744a7"
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/126",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/126",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "title": "125@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/125",
+      "updated": "2015-04-27T10:51:51.844108Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "batch_created",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 125,
+        "eventType": "batch_created",
+        "data": {
+          "sud": "2015-06-08",
+          "unallocated_quantity": 20,
+          "shipment_state": "manufacturing",
+          "warehouse_id": "orium",
+          "product_sku": "CHAFTY004RED-UK",
+          "batch_id": "4b0d0420-3b9b-42dd-be6c-5df18fa58fce"
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/125",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/125",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "title": "124@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/124",
+      "updated": "2015-04-27T10:51:51.585798Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "batch_created",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 124,
+        "eventType": "batch_created",
+        "data": {
+          "sud": "2015-06-08",
+          "unallocated_quantity": 10,
+          "shipment_state": "manufacturing",
+          "warehouse_id": "orium",
+          "product_sku": "CHAFTY004RED-UK",
+          "batch_id": "9271fbfa-a66c-4f3a-8a33-0b91ad284287"
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/124",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/124",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "title": "123@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/123",
+      "updated": "2015-04-27T10:42:34.936796Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "batch_created",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 123,
+        "eventType": "batch_created",
+        "data": {
+          "sud": "2015-06-28",
+          "unallocated_quantity": 10,
+          "shipment_state": "manufacturing",
+          "warehouse_id": "dooley-rumble",
+          "product_sku": "CHAFTY003LIM-UK",
+          "batch_id": "dc535601-d0d3-459e-8344-e48024d1a624"
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/123",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/123",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "title": "122@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/122",
+      "updated": "2015-04-27T10:42:34.709096Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "batch_created",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 122,
+        "eventType": "batch_created",
+        "data": {
+          "sud": "2015-06-28",
+          "unallocated_quantity": 5,
+          "shipment_state": "manufacturing",
+          "warehouse_id": "dooley-rumble",
+          "product_sku": "CHAFTY002BLA-UK",
+          "batch_id": "127f9d71-5dbe-41bb-a872-4395768a8b7e"
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/122",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/122",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "title": "121@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/121",
+      "updated": "2015-04-24T15:53:53.772931Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "sol_allocated_to_batch",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 121,
+        "eventType": "sol_allocated_to_batch",
+        "data": {
+          "batch_id": "PO7802: SOFRTC006GRY-UK",
+          "sale_order_id": "mag_100466662",
+          "product_sku": "SOFRTC006GRY-UK",
+          "quantity": 1
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/121",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/121",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "title": "120@batches",
+      "id": "http://10.35.0.157:2113/streams/batches/120",
+      "updated": "2015-04-24T15:53:53.71857Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "sol_allocated_to_batch",
+      "content": {
+        "eventStreamId": "batches",
+        "eventNumber": 120,
+        "eventType": "sol_allocated_to_batch",
+        "data": {
+          "batch_id": "PO7802: SOFRTC006GRY-UK",
+          "sale_order_id": "mag_100466662",
+          "product_sku": "SOFRTC006GRY-UK",
+          "quantity": 1
+        },
+        "metadata": ""
+      },
+      "links": [
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/120",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://10.35.0.157:2113/streams/batches/120",
+          "relation": "alternate"
+        }
+      ]
+    }
+  ]
+}

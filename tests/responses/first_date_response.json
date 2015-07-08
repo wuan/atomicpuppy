@@ -1,0 +1,61 @@
+{
+  "title": "Event stream 'sotd_2015-08-27'",
+  "id": "http://127.0.0.1:2113/streams/sotd_2015-08-27",
+  "updated": "2015-08-27T14:14:24.134746Z",
+  "streamId": "sotd_2015-08-27",
+  "author": {
+    "name": "EventStore"
+  },
+  "headOfStream": true,
+  "selfUrl": "http://127.0.0.1:2113/streams/sotd_2015-08-27",
+  "eTag": "0;248368668",
+  "links": [
+    {
+      "uri": "http://127.0.0.1:2113/streams/sotd_2015-08-27",
+      "relation": "self"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/sotd_2015-08-27/head/backward/20",
+      "relation": "first"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/sotd_2015-08-27/1/forward/20",
+      "relation": "previous"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/sotd_2015-08-27/metadata",
+      "relation": "metadata"
+    }
+  ],
+  "entries": [
+    {
+      "eventId": "a51be208-25e5-41b8-a598-ec299a20ef96",
+      "eventType": "my-event",
+      "eventNumber": 0,
+      "data": "{\n  \"a\": 1}",
+      "streamId": "sotd_2015-08-27",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 0,
+      "positionStreamId": "sotd_2015-08-27",
+      "title": "0@sotd_2015-08-27",
+      "id": "http://127.0.0.1:2113/streams/sotd_2015-08-27/0",
+      "updated": "2015-04-28T14:14:24.134746Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "event-type",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/sotd_2015-08-27/0",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/sotd_2015-08-27/0",
+          "relation": "alternate"
+        }
+      ]
+    }
+  ]
+}

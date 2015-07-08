@@ -1,0 +1,119 @@
+{
+  "title": "Event stream 'newstream2'",
+  "id": "http://127.0.0.1:2113/streams/newstream2",
+  "updated": "2015-04-28T17:24:10.810839Z",
+  "streamId": "newstream2",
+  "author": {
+    "name": "EventStore"
+  },
+  "headOfStream": true,
+  "selfUrl": "http://127.0.0.1:2113/streams/newstream2",
+  "eTag": "2;248368668",
+  "links": [
+    {
+      "uri": "http://127.0.0.1:2113/streams/newstream2",
+      "relation": "self"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/newstream2/head/backward/20",
+      "relation": "first"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/newstream2/3/forward/20",
+      "relation": "previous"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/newstream2/metadata",
+      "relation": "metadata"
+    }
+  ],
+  "entries": [
+    {
+      "eventId": "fbf4a1a1-b453-4dfe-a01f-ec52c34e16e4",
+      "eventType": "event-type",
+      "eventNumber": 2,
+      "data": "{\n  \"a\": 3\n}",
+      "streamId": "newstream2",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 2,
+      "positionStreamId": "newstream2",
+      "title": "2@newstream2",
+      "id": "http://127.0.0.1:2113/streams/newstream2/2",
+      "updated": "2015-04-28T17:24:10.810839Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "event-type",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/newstream2/2",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/newstream2/2",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "fbf4a1a1-b4d3-4dfe-a01f-ec52c34e16e4",
+      "eventType": "event-type",
+      "eventNumber": 1,
+      "data": "{\n  \"a\": 2\n}",
+      "streamId": "newstream2",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 1,
+      "positionStreamId": "newstream2",
+      "title": "1@newstream2",
+      "id": "http://127.0.0.1:2113/streams/newstream2/1",
+      "updated": "2015-04-28T17:24:10.810836Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "event-type",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/newstream2/1",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/newstream2/1",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "fbf4a1a1-b4a3-4dfe-a01f-ec52c34e16e4",
+      "eventType": "event-type",
+      "eventNumber": 0,
+      "data": "{\n  \"a\": 1\n}",
+      "streamId": "newstream2",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 0,
+      "positionStreamId": "newstream2",
+      "title": "0@newstream2",
+      "id": "http://127.0.0.1:2113/streams/newstream2/0",
+      "updated": "2015-04-28T17:24:10.810821Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "event-type",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/newstream2/0",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/newstream2/0",
+          "relation": "alternate"
+        }
+      ]
+    }
+  ]
+}
