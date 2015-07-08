@@ -13,5 +13,10 @@ setup(
         "PyYAML==3.11",
         "redis==2.10.3",
         "retrying==1.3.3"
-    ]
+    ],
+    url = 'https://github.com/madedotcom/atomicpuppy',
+    download_url = 'https://github.com/madedotcom/atomicpuppy/tarball/0.1',
+    description = 'A service-activator component for eventstore',
+    author = 'Bob Gregory',
+    keywords = ['eventstore'],
 )
