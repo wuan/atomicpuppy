@@ -12,7 +12,8 @@ setup(
         "pybreaker==0.2.3",
         "PyYAML==3.11",
         "redis==2.10.3",
-        "retrying==1.3.3"
+        "retrying==1.3.3",
+        "requests==2.7.0"
     ],
     url = 'https://github.com/madedotcom/atomicpuppy',
     download_url = 'https://github.com/madedotcom/atomicpuppy/tarball/0.1',
