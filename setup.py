@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 setup(
     name="AtomicPuppy",
-    version="0.1.1",
+    version="0.1.2",
     packages=find_packages(),
     install_requires=[
         "aiohttp>=0.15.3",
@@ -16,7 +16,7 @@ setup(
         "requests==2.7.0"
     ],
     url = 'https://github.com/madedotcom/atomicpuppy',
-    download_url = 'https://github.com/madedotcom/atomicpuppy/tarball/0.1',
+    download_url = 'https://github.com/madedotcom/atomicpuppy/tarball/0.1.2',
     description = 'A service-activator component for eventstore',
     author = 'Bob Gregory',
     keywords = ['eventstore'],
