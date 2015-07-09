@@ -1,0 +1,5 @@
+-e .
+-e git+https://github.com/OddBloke/HTTPretty.git@f899d1bda8234658c2cec5aab027cb5b7c42203c#egg=HTTPretty		
+Contexts==0.10.2		
+fakeredis==0.6.1		
+freezegun==0.3.3
