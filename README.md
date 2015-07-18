@@ -24,6 +24,7 @@ atomicpuppy:
 
 ```python
 # main.py
+# AtomicPuppy uses asyncio coroutines for concurrently IO
 import asyncio
 import logging
 import signal
