@@ -24,6 +24,10 @@ atomicpuppy:
 
 ```python
 # main.py
+import asyncio
+import logging
+import signal
+from atomicpuppy import AtomicPuppy
 
 # AtomicPuppy needs a callback to pass you messages.
 def handle(msg):
