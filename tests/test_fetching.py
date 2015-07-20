@@ -554,6 +554,40 @@ class When_a_disconnection_error_occurs_during_fetch(StreamReaderContext):
 
 
 """
+If we get a ClientResponseError error, then it's a network level issue. Retry with
+a backoff.
+"""
+
+
+class When_a_disconnection_error_occurs_during_fetch(StreamReaderContext):
+
+    _log = SpyLog()
+
+    def given_a_disconnection_error(self):
+            self.http.registerCallbacksUri(
+                'http://eventstore.local:2113/streams/newstream',
+                [
+                    lambda: exec('raise aiohttp.errors.ClientResponseError("Darn it, something went bad")'),
+                    lambda: exec('raise ValueError()')
+                ]
+            )
+
+    def because_we_start_the_reader(self):
+        self._reader = self.subscribeTo("newstream", -1, nosleep=True)
+        with(self._log.capture()):
+            mock = self.http.getMock()
+            with patch("aiohttp.request", new=mock):
+                self._loop.run_until_complete(
+                    self._reader.start_consuming()
+                )
+
+    def it_should_log_a_warning(self):
+        assert(any(r.msg == "Error occurred while requesting %s"
+                   and r.levelno == logging.WARNING
+                   for r in self._log._logs))
+
+
+"""
 If we get a 40x range message then something is wrong with our configuration,
 we should stop the loop and log an error.
 """
