@@ -219,7 +219,7 @@ class StreamReader:
             data = json.loads(e["data"])
         except ValueError:
             self.logger.error("Failed to parse json data for %s message %s",
-                             e.get("eventType"), e.get("eventId"))
+                              e.get("eventType"), e.get("eventId"))
             return None
         type = e["eventType"]
         id = UUID(e["eventId"])
@@ -324,7 +324,7 @@ class EventRaiser:
 
     def __init__(self, queue, counter, callback, loop=None):
         self._queue = queue
-        self._callback =  callback
+        self._callback = callback
         self._counter = counter
         self._loop = loop or asyncio.get_event_loop()
         self._logger = logging.getLogger(__name__)
@@ -352,12 +352,11 @@ class EventRaiser:
                     self._logger.warn("Failed to persist last read event")
             except RejectedMessageException:
                 self._logger.warn("%s message %s was rejected and has not been processed",
-                                      msg.type, msg.id)
+                                  msg.type, msg.id)
             except(TimeoutError):
                 pass
             except:
                 self._logger.exception("Failed to process message %s", msg)
-
 
 
 class EventCounter:
@@ -451,7 +450,7 @@ class SubscriptionInfoStore:
         if parsed_name not in self.subscriptions.keys():
             last_read_for_stream = self.counter[parsed_name]
             self._logger.info("Creating new SubscriberInfo for {} from event number {}".format(parsed_name, last_read_for_stream))
-            s = SubscriberInfo(parsed_name, uri=self._build_uri(parsed_name), last_read=last_read_for_stream)
+            s = SubscriberInfo(parsed_name, uri=self._build_uri(parsed_name, last_read_for_stream), last_read=last_read_for_stream)
             self.subscriptions[parsed_name] = s
 
         return self.subscriptions[parsed_name]
@@ -476,9 +475,12 @@ class SubscriptionInfoStore:
             last_read=s.last_read)
         self.subscriptions[s._stream] = new_subscription
 
-    def _build_uri(self, stream_name):
-        return 'http://{}:{}/streams/{}'.format(
-            self.config.host, self.config.port, stream_name)
+    def _build_uri(self, stream_name, last_read_for_stream=-1):
+        if last_read_for_stream < 0:
+            last_read_for_stream = 0
+
+        return 'http://{}:{}/streams/{}/{}/forward/20'.format(
+            self.config.host, self.config.port, stream_name, last_read_for_stream)
 
     def _parse(self, stream_name):
         if '#date#' not in stream_name:
