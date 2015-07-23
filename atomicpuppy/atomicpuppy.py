@@ -20,7 +20,8 @@ SubscriptionConfig = namedtuple('SubscriptionConfig', ['streams',
                                                        'counter_factory',
                                                        'instance_name',
                                                        'host',
-                                                       'port'])
+                                                       'port',
+                                                       'timeout'])
 
 
 class Event:
@@ -93,8 +94,8 @@ class SubscriberInfo:
 
 class StreamReader:
 
-    def __init__(self, queue, stream_name, loop, instance_name, subscriptions_store, nosleep=False):
-        self._fetcher = StreamFetcher(None, loop=loop, nosleep=nosleep)
+    def __init__(self, queue, stream_name, loop, instance_name, subscriptions_store, timeout, nosleep=False):
+        self._fetcher = StreamFetcher(None, loop=loop, nosleep=nosleep, timeout=timeout)
         self._queue = queue
         self._loop = loop
         self._stream = stream_name
@@ -236,7 +237,7 @@ class state(Enum):
 
 class StreamFetcher:
 
-    def __init__(self, policy, loop, nosleep=False):
+    def __init__(self, policy, loop, timeout, nosleep=False):
         self._policy = policy
         self._loop = loop
         self._log = logging.getLogger(__name__)
@@ -245,6 +246,7 @@ class StreamFetcher:
         self._sleep = None
         self._nosleep = nosleep
         self._exns = set()
+        self._timeout = timeout
 
     def stop(self):
         self._running = False
@@ -309,7 +311,7 @@ class StreamFetcher:
                             loop=self._loop,
                         )
                     ),
-                    100,
+                    self._timeout,
                     loop=self._loop
                 )
                 if(response.status == 200):
@@ -424,7 +426,8 @@ class StreamConfigReader:
                                   counter_factory=ctr,
                                   instance_name=instance,
                                   host=cfg.get("host") or 'localhost',
-                                  port=cfg.get("port") or 2113)
+                                  port=cfg.get("port") or 2113,
+                                  timeout=cfg.get("timeout") or 20)
 
     def _make_counter(self, cfg, instance):
         ctr = cfg.get('counter')

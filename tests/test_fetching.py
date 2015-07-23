@@ -56,7 +56,8 @@ class StreamReaderContext:
             counter_factory=self.create_counter,
             instance_name='foo',
             host=self._host,
-            port=self._port)
+            port=self._port,
+            timeout=20)
 
         subscriptions_store = SubscriptionInfoStore(config, self.counter)
         if last_read != -1:
@@ -67,6 +68,7 @@ class StreamReaderContext:
             loop=self._loop,
             instance_name='foo',
             subscriptions_store=subscriptions_store,
+            timeout=config.timeout,
             nosleep=nosleep)
         return self._reader
 

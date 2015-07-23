@@ -36,7 +36,8 @@ class AtomicPuppy:
                 stream_name=s,
                 loop=self._loop,
                 instance_name=self.config.instance_name,
-                subscriptions_store=subscription_info_store)
+                subscriptions_store=subscription_info_store,
+                timeout=self.config.timeout)
             for s in self.config.streams
         ]
         self.tasks = [s.start_consuming() for s in self.readers]
