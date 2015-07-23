@@ -330,6 +330,10 @@ class StreamFetcher:
             except HttpServerError as e:
                 self.log(e, uri)
                 yield from self.sleep(s)
+            except TimeoutError as e:
+                self.log(e, uri)
+                yield from self.sleep(s)
+
 
 
 class EventRaiser:
