@@ -298,18 +298,28 @@ class StreamFetcher:
             headers = {"Accept": "application/json"}
             params = {"embed": "body"}
             try:
-                r = yield from aiohttp.request('GET', uri,
-                                               params=params,
-                                               headers=headers,
-                                               loop=self._loop)
-                if(r.status == 200):
-                    return r
-                if r.status in (404, 408):
-                    raise HttpServerError(uri, r.status)
-                if(r.status >= 400 and r.status <= 499):
-                    raise HttpClientError(uri, r.status)
-                if(r.status >= 500 and r.status <= 599):
-                    raise HttpServerError(uri, r.status)
+                response = yield from asyncio.wait_for(
+                    aiohttp.request(
+                        'GET', uri,
+                        params=params,
+                        headers=headers,
+                        loop=self._loop,
+                        connector=aiohttp.TCPConnector(
+                            resolve=True,
+                            loop=self._loop,
+                        )
+                    ),
+                    100,
+                    loop=self._loop
+                )
+                if(response.status == 200):
+                    return response
+                if response.status in (404, 408):
+                    raise HttpServerError(uri, response.status)
+                if(response.status >= 400 and response.status <= 499):
+                    raise HttpClientError(uri, response.status)
+                if(response.status >= 500 and response.status <= 599):
+                    raise HttpServerError(uri, response.status)
             except ValueError as e:
                 raise UrlError(e)
             except (aiohttp.errors.ClientError, aiohttp.errors.DisconnectedError) as e:
