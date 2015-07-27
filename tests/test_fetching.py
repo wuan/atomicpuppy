@@ -489,7 +489,7 @@ class When_a_disconnection_error_occurs_during_fetch(StreamReaderContext):
 class When_a_timeout_error_occurs_during_fetch(StreamReaderContext):
 
     """
-    If we get a Timeout error, then it's a network level issue'. Retry with
+    If we get a Timeout error, then it's a network level issue. Retry with
     a backoff.
     """
 
