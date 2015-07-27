@@ -20,7 +20,8 @@ SubscriptionConfig = namedtuple('SubscriptionConfig', ['streams',
                                                        'counter_factory',
                                                        'instance_name',
                                                        'host',
-                                                       'port'])
+                                                       'port',
+                                                       'timeout'])
 
 
 class Event:
@@ -93,8 +94,8 @@ class SubscriberInfo:
 
 class StreamReader:
 
-    def __init__(self, queue, stream_name, loop, instance_name, subscriptions_store, nosleep=False):
-        self._fetcher = StreamFetcher(None, loop=loop, nosleep=nosleep)
+    def __init__(self, queue, stream_name, loop, instance_name, subscriptions_store, timeout, nosleep=False):
+        self._fetcher = StreamFetcher(None, loop=loop, nosleep=nosleep, timeout=timeout)
         self._queue = queue
         self._loop = loop
         self._stream = stream_name
@@ -236,7 +237,7 @@ class state(Enum):
 
 class StreamFetcher:
 
-    def __init__(self, policy, loop, nosleep=False):
+    def __init__(self, policy, loop, timeout, nosleep=False):
         self._policy = policy
         self._loop = loop
         self._log = logging.getLogger(__name__)
@@ -245,6 +246,7 @@ class StreamFetcher:
         self._sleep = None
         self._nosleep = nosleep
         self._exns = set()
+        self._timeout = timeout
 
     def stop(self):
         self._running = False
@@ -298,18 +300,28 @@ class StreamFetcher:
             headers = {"Accept": "application/json"}
             params = {"embed": "body"}
             try:
-                r = yield from aiohttp.request('GET', uri,
-                                               params=params,
-                                               headers=headers,
-                                               loop=self._loop)
-                if(r.status == 200):
-                    return r
-                if r.status in (404, 408):
-                    raise HttpServerError(uri, r.status)
-                if(r.status >= 400 and r.status <= 499):
-                    raise HttpClientError(uri, r.status)
-                if(r.status >= 500 and r.status <= 599):
-                    raise HttpServerError(uri, r.status)
+                response = yield from asyncio.wait_for(
+                    aiohttp.request(
+                        'GET', uri,
+                        params=params,
+                        headers=headers,
+                        loop=self._loop,
+                        connector=aiohttp.TCPConnector(
+                            resolve=True,
+                            loop=self._loop,
+                        )
+                    ),
+                    self._timeout,
+                    loop=self._loop
+                )
+                if(response.status == 200):
+                    return response
+                if response.status in (404, 408):
+                    raise HttpServerError(uri, response.status)
+                if(response.status >= 400 and response.status <= 499):
+                    raise HttpClientError(uri, response.status)
+                if(response.status >= 500 and response.status <= 599):
+                    raise HttpServerError(uri, response.status)
             except ValueError as e:
                 raise UrlError(e)
             except (aiohttp.errors.ClientError, aiohttp.errors.DisconnectedError) as e:
@@ -318,6 +330,10 @@ class StreamFetcher:
             except HttpServerError as e:
                 self.log(e, uri)
                 yield from self.sleep(s)
+            except TimeoutError as e:
+                self.log(e, uri)
+                yield from self.sleep(s)
+
 
 
 class EventRaiser:
@@ -414,7 +430,8 @@ class StreamConfigReader:
                                   counter_factory=ctr,
                                   instance_name=instance,
                                   host=cfg.get("host") or 'localhost',
-                                  port=cfg.get("port") or 2113)
+                                  port=cfg.get("port") or 2113,
+                                  timeout=cfg.get("timeout") or 20)
 
     def _make_counter(self, cfg, instance):
         ctr = cfg.get('counter')
