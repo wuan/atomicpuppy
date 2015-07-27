@@ -315,10 +315,8 @@ class When_events_are_added_after_the_first_run(StreamReaderContext):
         self.http.registerJsonUri('http://eventstore.local:2113/streams/stock/0/forward/20',
                                   SCRIPT_PATH + '/responses/new-events/head.json')
 
-
         self.http.registerJsonUri('http://eventstore.local:2113/streams/stock/0/forward/20',
                                   SCRIPT_PATH + '/responses/new-events/head.json')
-
 
         # On the second invocation, we receive no new events
         # On the third invocation, we receive two pages of two events each
@@ -404,10 +402,13 @@ class When_a_client_error_occurs_during_fetch(StreamReaderContext):
     _log = SpyLog()
 
     def given_a_client_error(self):
-            self.http.registerCallbacksUri(
-                'http://eventstore.local:2113/streams/newstream/0/forward/20',[
+        self.http.registerCallbacksUri(
+            'http://eventstore.local:2113/streams/newstream/0/forward/20',
+            [
                 lambda: exec('raise aiohttp.errors.ClientOSError("Darn it, can\'t connect")'),
-                lambda: exec('raise ValueError()')])
+                lambda: exec('raise ValueError()')
+            ]
+        )
 
     def because_we_start_the_reader(self):
         self._reader = self.subscribeTo("newstream", -1, nosleep=True)
@@ -431,11 +432,14 @@ class When_multiple_errors_of_the_same_type_occur(StreamReaderContext):
     _log = SpyLog()
 
     def given_a_client_error(self):
-            self.http.registerCallbacksUri(
-                'http://eventstore.local:2113/streams/newstream/0/forward/20',[
+        self.http.registerCallbacksUri(
+            'http://eventstore.local:2113/streams/newstream/0/forward/20',
+            [
                 lambda: exec('raise aiohttp.errors.ClientOSError("Darn it, can\'t connect")'),
                 lambda: exec('raise aiohttp.errors.ClientOSError("Darn it, can\'t connect")'),
-                lambda: exec('raise ValueError()')])
+                lambda: exec('raise ValueError()')
+            ]
+        )
 
     def because_we_start_the_reader(self):
         self._reader = self.subscribeTo("newstream", -1, nosleep=True)
@@ -463,13 +467,13 @@ class When_a_disconnection_error_occurs_during_fetch(StreamReaderContext):
     _log = SpyLog()
 
     def given_a_disconnection_error(self):
-            self.http.registerCallbacksUri(
-                'http://eventstore.local:2113/streams/newstream/0/forward/20',
-                [
-                    lambda: exec('raise aiohttp.errors.DisconnectedError("Darn it, can\'t connect")'),
-                    lambda: exec('raise ValueError()')
-                ]
-            )
+        self.http.registerCallbacksUri(
+            'http://eventstore.local:2113/streams/newstream/0/forward/20',
+            [
+                lambda: exec('raise aiohttp.errors.DisconnectedError("Darn it, can\'t connect")'),
+                lambda: exec('raise ValueError()')
+            ]
+        )
 
     def because_we_start_the_reader(self):
         self._reader = self.subscribeTo("newstream", -1, nosleep=True)
@@ -495,14 +499,14 @@ class When_a_timeout_error_occurs_during_fetch(StreamReaderContext):
 
     _log = SpyLog()
 
-    def given_a_disconnection_error(self):
-            self.http.registerCallbacksUri(
-                'http://eventstore.local:2113/streams/newstream/0/forward/20',
-                [
-                    lambda: exec('raise aiohttp.errors.TimeoutError()'),
-                    lambda: exec('raise ValueError()')
-                ]
-            )
+    def given_a_timeout_error(self):
+        self.http.registerCallbacksUri(
+            'http://eventstore.local:2113/streams/newstream/0/forward/20',
+            [
+                lambda: exec('raise aiohttp.errors.TimeoutError()'),
+                lambda: exec('raise ValueError()')
+            ]
+        )
 
     def because_we_start_the_reader(self):
         self._reader = self.subscribeTo("newstream", -1, nosleep=True)
@@ -525,52 +529,18 @@ a backoff.
 """
 
 
-class When_a_disconnection_error_occurs_during_fetch(StreamReaderContext):
+class When_a_client_response_error_occurs_during_fetch(StreamReaderContext):
 
     _log = SpyLog()
 
-    def given_a_disconnection_error(self):
-            self.http.registerCallbacksUri(
-                'http://eventstore.local:2113/streams/newstream/0/forward/20',
-                [
-                    lambda: exec('raise aiohttp.errors.ClientResponseError("Darn it, something went bad")'),
-                    lambda: exec('raise ValueError()')
-                ]
-            )
-
-    def because_we_start_the_reader(self):
-        self._reader = self.subscribeTo("newstream", -1, nosleep=True)
-        with(self._log.capture()):
-            mock = self.http.getMock()
-            with patch("aiohttp.request", new=mock):
-                self._loop.run_until_complete(
-                    self._reader.start_consuming()
-                )
-
-    def it_should_log_a_warning(self):
-        assert(any(r.msg == "Error occurred while requesting %s"
-                   and r.levelno == logging.WARNING
-                   for r in self._log._logs))
-
-
-"""
-If we get a ClientResponseError error, then it's a network level issue. Retry with
-a backoff.
-"""
-
-
-class When_a_disconnection_error_occurs_during_fetch(StreamReaderContext):
-
-    _log = SpyLog()
-
-    def given_a_disconnection_error(self):
-            self.http.registerCallbacksUri(
-                'http://eventstore.local:2113/streams/newstream',
-                [
-                    lambda: exec('raise aiohttp.errors.ClientResponseError("Darn it, something went bad")'),
-                    lambda: exec('raise ValueError()')
-                ]
-            )
+    def given_a_client_response_error(self):
+        self.http.registerCallbacksUri(
+            'http://eventstore.local:2113/streams/newstream/0/forward/20',
+            [
+                lambda: exec('raise aiohttp.errors.ClientResponseError("Darn it, something went bad")'),
+                lambda: exec('raise ValueError()')
+            ]
+        )
 
     def because_we_start_the_reader(self):
         self._reader = self.subscribeTo("newstream", -1, nosleep=True)
@@ -678,7 +648,9 @@ and retry with a backoff.
 
 
 class When_we_receive_a_50x_range_error(StreamReaderContext):
+
     _log = SpyLog()
+
     def given_a_500(self):
         self.http.registerEmptyUri(
                 'http://eventstore.local:2113/streams/newstream/0/forward/20', 500)
