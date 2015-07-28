@@ -324,7 +324,7 @@ class StreamFetcher:
                     raise HttpServerError(uri, response.status)
             except ValueError as e:
                 raise UrlError(e)
-            except (aiohttp.errors.ClientError, aiohttp.errors.DisconnectedError) as e:
+            except (aiohttp.errors.ClientError, aiohttp.errors.DisconnectedError, aiohttp.errors.ClientResponseError) as e:
                 self.log(e, uri)
                 yield from self.sleep(s)
             except HttpServerError as e:
