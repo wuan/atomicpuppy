@@ -296,6 +296,7 @@ class StreamFetcher:
         sleep_times = self.sleeps(uri)
         self._exns = set()
         self._state = state.green
+        response = None
         for s in sleep_times:
             headers = {"Accept": "application/json"}
             params = {"embed": "body"}
@@ -333,6 +334,9 @@ class StreamFetcher:
             except TimeoutError as e:
                 self.log(e, uri)
                 yield from self.sleep(s)
+            finally:
+                if response:
+                    response.close()
 
 
 
@@ -357,7 +361,7 @@ class EventRaiser:
                 msg = yield from asyncio.wait_for(self._queue.get(),
                                                   timeout=1,
                                                   loop=self._loop)
-                if(not msg):
+                if not msg:
                     continue
                 self._callback(msg)
                 try:
@@ -373,6 +377,34 @@ class EventRaiser:
                 pass
             except:
                 self._logger.exception("Failed to process message %s", msg)
+
+
+    @asyncio.coroutine
+    def consume_events(self):
+        self._is_running = True
+        while(self._loop.is_running() and self._is_running):
+            try:
+                msg = yield from asyncio.wait_for(self._queue.get(),
+                                                  timeout=1,
+                                                  loop=self._loop)
+                if not msg:
+                    self._is_running = False
+                    return
+                self._callback(msg)
+                try:
+                    self._counter[msg.stream] = msg.sequence
+                except CircuitBreakerError:
+                    pass
+                except RedisError:
+                    self._logger.warn("Failed to persist last read event")
+            except RejectedMessageException:
+                self._logger.warn("%s message %s was rejected and has not been processed",
+                                  msg.type, msg.id)
+            except(TimeoutError):
+                self._is_running = False
+            except:
+                self._logger.exception("Failed to process message %s", msg)
+                self._is_running = False
 
 
 class EventCounter:
