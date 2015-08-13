@@ -451,9 +451,15 @@ class StreamConfigReader:
     def __init__(self):
         pass
 
-    def read(self, file):
+    def read(self, config_file):
+        cfg = None
+        if isinstance(config_file, dict):
+            cfg = config_file.get('atomicpuppy')
+        else:
+            with open(config_file) as file:
+                cfg = yaml.load(file).get('atomicpuppy')
+
         streams = []
-        cfg = yaml.load(file).get('atomicpuppy')
         instance = cfg.get('instance') or platform.node()
         for stream in cfg.get("streams"):
             streams.append(stream)

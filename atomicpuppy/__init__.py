@@ -17,8 +17,9 @@ class AtomicPuppy:
     running = False
 
     def __init__(self, cfg_file, callback, loop=None):
-        with open(cfg_file) as file:
-            self.config = StreamConfigReader().read(file)
+        self.config = StreamConfigReader().read(cfg_file)
+
+
         self.callback = callback
         self._loop = loop or asyncio.get_event_loop()
         self._queue = asyncio.Queue(maxsize=20, loop=self._loop)
