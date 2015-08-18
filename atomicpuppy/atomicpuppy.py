@@ -296,7 +296,6 @@ class StreamFetcher:
         sleep_times = self.sleeps(uri)
         self._exns = set()
         self._state = state.green
-        response = None
         for s in sleep_times:
             headers = {"Accept": "application/json"}
             params = {"embed": "body"}
@@ -334,9 +333,6 @@ class StreamFetcher:
             except TimeoutError as e:
                 self.log(e, uri)
                 yield from self.sleep(s)
-            finally:
-                if response:
-                    response.close()
 
 
 
