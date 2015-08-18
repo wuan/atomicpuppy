@@ -455,9 +455,12 @@ class StreamConfigReader:
         cfg = None
         if isinstance(config_file, dict):
             cfg = config_file.get('atomicpuppy')
-        else:
+        elif isinstance(config_file, str):
             with open(config_file) as file:
                 cfg = yaml.load(file).get('atomicpuppy')
+        else:
+            cfg = yaml.load(config_file).get('atomicpuppy')
+
 
         streams = []
         instance = cfg.get('instance') or platform.node()
