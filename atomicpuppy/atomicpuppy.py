@@ -217,7 +217,7 @@ class StreamReader:
 
     def _make_event(self, e):
         try:
-            data = json.loads(e["data"])
+            data = json.loads(e["data"], encoding='UTF-8')
         except ValueError:
             self.logger.error("Failed to parse json data for %s message %s",
                               e.get("eventType"), e.get("eventId"))
