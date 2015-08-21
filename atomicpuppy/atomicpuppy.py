@@ -36,6 +36,7 @@ class Event:
     def __str__(self):
         return "{}-{} ({}): {}".format(self.type, self.sequence, self.id, self.data)
 
+
 class EventCounterCircuitBreaker(pybreaker.CircuitBreakerListener):
 
     def __init__(self):
