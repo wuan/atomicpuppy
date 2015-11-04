@@ -170,7 +170,7 @@ class StreamReader:
             self.logger.debug("walking backwards from %s", uri)
             r = yield from self._fetcher.fetch(uri)
             js = yield from r.json()
-            if(js["entries"]):
+            if js["entries"]:
                 self.logger.debug("raising events from page %s", uri)
                 yield from self._raise_page_events(js)
             prev_uri = self._get_link(js, "previous")
