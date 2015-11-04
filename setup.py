@@ -30,7 +30,7 @@ setup(
     install_requires=install_requires,
     tests_require=tests_require,
     url = 'https://github.com/madedotcom/atomicpuppy',
-    download_url = 'https://github.com/madedotcom/atomicpuppy/tarball/0.1.4',
+    download_url = 'https://github.com/madedotcom/atomicpuppy/tarball/0.2',
     description = 'A service-activator component for eventstore',
     author = 'Bob Gregory',
     keywords = ['eventstore'],
