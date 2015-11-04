@@ -165,21 +165,26 @@ class StreamReader:
 
     @asyncio.coroutine
     def _walk_from_last(self, prev_uri):
-        self.logger.debug("walking backwards from %s", prev_uri)
-        r = yield from self._fetcher.fetch(prev_uri)
-        js = yield from r.json()
-        if(js["entries"]):
-            self.logger.debug("raising events from page %s", prev_uri)
-            yield from self._raise_page_events(js)
-        prev = self._get_link(js, "previous")
-        if(prev):
-            self.logger.debug("Continuing to previous page %s", prev)
-            yield from self._walk_from_last(prev)
-        else:
-            self.logger.debug(
-                "back-walk completed, new polling uri is %s",
-                prev_uri)
-            self._subscriptions.update_uri(self._stream, prev_uri)
+        uri = prev_uri
+        while True:
+            self.logger.debug("walking backwards from %s", uri)
+            r = yield from self._fetcher.fetch(uri)
+            js = yield from r.json()
+            if(js["entries"]):
+                self.logger.debug("raising events from page %s", uri)
+                yield from self._raise_page_events(js)
+            prev_uri = self._get_link(js, "previous")
+            if not prev_uri:
+                # loop until there's a prev link, otherwise it means
+                # we are at the end or we are fetching an empty page
+                self.logger.debug(
+                    "back-walk completed, new polling uri is %s",
+                    uri)
+                self._subscriptions.update_uri(self._stream, uri)
+                break
+
+            self.logger.debug("Continuing to previous page %s", prev_uri)
+            uri = prev_uri
 
     @asyncio.coroutine
     def _raise_page_events(self, js):
