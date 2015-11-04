@@ -44,6 +44,44 @@ class When_an_event_is_processed:
         self.message_processor.stop()
 
 
+class When_an_event_is_processed_by_running_once:
+
+    the_message = None
+    event_recorder = {}
+    sequence_no = 43
+
+    def given_an_event_raiser(self):
+        self._loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(None)
+
+        self.message_id = uuid4()
+
+        self.queue = asyncio.Queue(loop=self._loop)
+        self.message_processor = EventRaiser(self.queue,
+                                                  self.event_recorder,
+                                                  lambda e: self.process_message(e),
+                                                  self._loop)
+
+    def because_we_add_a_message(self):
+        msg = Event(self.message_id, "type", {}, "stream", self.sequence_no)
+        asyncio.async(self.send_message(msg), loop=self._loop)
+        self._loop.run_until_complete(self.message_processor.consume_events())
+
+    def it_should_have_sent_the_message(self):
+        assert(self.the_message.id == self.message_id)
+
+    def it_should_have_recorded_the_event(self):
+        assert(self.event_recorder["stream"] == self.sequence_no)
+
+    @asyncio.coroutine
+    def send_message(self, e):
+        yield from self.queue.put(e)
+
+    def process_message(self, e):
+        self.the_message = e
+
+
+
 class When_a_message_is_rejected:
 
     event_recorder = {}

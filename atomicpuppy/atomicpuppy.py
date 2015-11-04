@@ -218,7 +218,7 @@ class StreamReader:
 
     def _make_event(self, e):
         try:
-            data = json.loads(e["data"])
+            data = json.loads(e["data"], encoding='UTF-8')
         except ValueError:
             self.logger.error("Failed to parse json data for %s message %s",
                               e.get("eventType"), e.get("eventId"))
@@ -358,7 +358,7 @@ class EventRaiser:
                 msg = yield from asyncio.wait_for(self._queue.get(),
                                                   timeout=1,
                                                   loop=self._loop)
-                if(not msg):
+                if not msg:
                     continue
                 self._callback(msg)
                 try:
@@ -374,6 +374,34 @@ class EventRaiser:
                 pass
             except:
                 self._logger.exception("Failed to process message %s", msg)
+
+
+    @asyncio.coroutine
+    def consume_events(self):
+        self._is_running = True
+        while(self._loop.is_running() and self._is_running):
+            try:
+                msg = yield from asyncio.wait_for(self._queue.get(),
+                                                  timeout=1,
+                                                  loop=self._loop)
+                if not msg:
+                    self._is_running = False
+                    return
+                self._callback(msg)
+                try:
+                    self._counter[msg.stream] = msg.sequence
+                except CircuitBreakerError:
+                    pass
+                except RedisError:
+                    self._logger.warn("Failed to persist last read event")
+            except RejectedMessageException:
+                self._logger.warn("%s message %s was rejected and has not been processed",
+                                  msg.type, msg.id)
+            except(TimeoutError):
+                self._is_running = False
+            except:
+                self._logger.exception("Failed to process message %s", msg)
+                self._is_running = False
 
 
 class EventCounter:
@@ -420,9 +448,18 @@ class StreamConfigReader:
     def __init__(self):
         pass
 
-    def read(self, file):
+    def read(self, config_file):
+        cfg = None
+        if isinstance(config_file, dict):
+            cfg = config_file.get('atomicpuppy')
+        elif isinstance(config_file, str):
+            with open(config_file) as file:
+                cfg = yaml.load(file).get('atomicpuppy')
+        else:
+            cfg = yaml.load(config_file).get('atomicpuppy')
+
+
         streams = []
-        cfg = yaml.load(file).get('atomicpuppy')
         instance = cfg.get('instance') or platform.node()
         for stream in cfg.get("streams"):
             streams.append(stream)
