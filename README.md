@@ -49,3 +49,15 @@ loop.add_signal_handler(signal.SIGINT, stop)
 # and to start it call start.
 loop.run_until_complete(ap.start())
 ```
+
+
+## Run the tests
+
+A `tox.ini` file is provided to run the tests with different versions of Python.
+
+To run the tests:
+
+1. Make sure you have the Python 3.4 headers installed (on Ubuntu this is `apt-get install python3.4-dev`)
+2. Make sure you have the Python 3.5 headers installed (on Ubuntu this is `apt-get install python3.5-dev`)
+3. `pip install test-requirements.txt` from the root folder of the repository
+4. Run `tox` from the root folder of the repository
