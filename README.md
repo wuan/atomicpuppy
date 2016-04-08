@@ -59,5 +59,5 @@ To run the tests:
 
 1. Make sure you have the Python 3.4 headers installed (on Ubuntu this is `apt-get install python3.4-dev`)
 2. Make sure you have the Python 3.5 headers installed (on Ubuntu this is `apt-get install python3.5-dev`)
-3. `pip install test-requirements.txt` from the root folder of the repository
+3. `pip install -r test-requirements.txt` from the root folder of the repository
 4. Run `tox` from the root folder of the repository
