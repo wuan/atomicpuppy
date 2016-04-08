@@ -364,6 +364,42 @@ class When_events_are_added_after_the_first_run(StreamReaderContext):
 
         return self._the_events
 
+
+
+class When_reading_from_a_category_projection(StreamReaderContext):
+
+    _the_events = []
+
+    @property
+    def the_events(self):
+        if(not self._the_events):
+            while(not self._queue.empty()):
+                self._the_events.append(self._queue.get_nowait())
+
+        return self._the_events
+
+    def given_a_category_projection_stream(self):
+        self.http.registerJsonUri(
+            'http://eventstore.local:2113/streams/$ce-order/0/forward/20',
+            SCRIPT_PATH + '/responses/category-projection/head.json'
+        )
+
+    def because_we_run_the_reader(self):
+        self._reader = self.subscribeTo('$ce-order', -1)
+        self.run_the_reader()
+
+    def it_should_have_read_all_the_events(self):
+        assert len(self.the_events) == 3
+
+    def it_should_have_read_the_events_in_the_correct_order(self):
+        for seq in range(3):
+            assert self.the_events[seq].sequence == seq
+
+    def it_should_use_the_category_projection_stream_name(self):
+        for seq in range(3):
+            assert self.the_events[seq].stream == '$ce-order'
+
+
 """
 Value errors pretty much mean that our URL is screwed, or that there's an SSL
 context mismatch. In that case, we should just end the loop.
