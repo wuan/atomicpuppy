@@ -191,7 +191,7 @@ class StreamReader:
         subscription = self._subscriptions.get(self._stream)
         stack = []
         for e in js['entries']:
-            if(e["eventNumber"] > subscription.last_read):
+            if(e["positionEventNumber"] > subscription.last_read):
                 stack.append(e)
         while(stack):
             evt = self._make_event(stack.pop())
@@ -203,7 +203,7 @@ class StreamReader:
     def seek_to_last_read(self, js):
         subscription = self._subscriptions.get(self._stream)
         for e in js["entries"]:
-            if(e["eventNumber"] <= subscription.last_read):
+            if(e["positionEventNumber"] <= subscription.last_read):
                 self.logger.debug(
                     "Found last read event on current page, raising events")
                 yield from self._raise_page_events(js)
@@ -230,8 +230,8 @@ class StreamReader:
             return None
         type = e["eventType"]
         id = UUID(e["eventId"])
-        stream = e["streamId"]
-        sequence = e["eventNumber"]
+        stream = e["positionStreamId"]
+        sequence = e["positionEventNumber"]
         return Event(id, type, data, stream, sequence)
 
 

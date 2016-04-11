@@ -1,0 +1,117 @@
+{
+  "title": "Event stream '$ce-order'",
+  "id": "http://localhost:2113/streams/%24ce-order",
+  "updated": "2016-04-08T11:06:20.161963Z",
+  "streamId": "$ce-order",
+  "author": {
+    "name": "EventStore"
+  },
+  "headOfStream": false,
+  "links": [
+    {
+      "uri": "http://localhost:2113/streams/%24ce-order",
+      "relation": "self"
+    },
+    {
+      "uri": "http://localhost:2113/streams/%24ce-order/head/backward/20",
+      "relation": "first"
+    },
+    {
+      "uri": "http://localhost:2113/streams/%24ce-order/3/forward/20",
+      "relation": "previous"
+    },
+    {
+      "uri": "http://localhost:2113/streams/%24ce-order/metadata",
+      "relation": "metadata"
+    }
+  ],
+  "entries": [
+    {
+      "eventId": "5f1bd258-e690-4f7c-b3dd-b46cf384871e",
+      "eventType": "order_placed",
+      "eventNumber": 0,
+      "data": "{    \"order_id\": \"456\"}",
+      "streamId": "order-456",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 2,
+      "positionStreamId": "$ce-order",
+      "title": "0@order-456",
+      "id": "http://localhost:2113/streams/order-456/0",
+      "updated": "2016-04-08T11:07:21.083654Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "$>",
+      "links": [
+        {
+          "uri": "http://localhost:2113/streams/order-456/0",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://localhost:2113/streams/order-456/0",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "6c58aaaf-c282-4213-a9a9-0460e6ada23b",
+      "eventType": "order_edited",
+      "eventNumber": 1,
+      "data": "{    \"order_id\": \"123\"}",
+      "streamId": "order-123",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 1,
+      "positionStreamId": "$ce-order",
+      "title": "1@order-123",
+      "id": "http://localhost:2113/streams/order-123/1",
+      "updated": "2016-04-08T11:07:21.083649Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "$>",
+      "links": [
+        {
+          "uri": "http://localhost:2113/streams/order-123/1",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://localhost:2113/streams/order-123/1",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "2e96b4dd-4383-4acd-8d37-b70dd56f6271",
+      "eventType": "order_placed",
+      "eventNumber": 0,
+      "data": "{    \"order_id\": \"123\"}",
+      "streamId": "order-123",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 0,
+      "positionStreamId": "$ce-order",
+      "title": "0@order-123",
+      "id": "http://localhost:2113/streams/order-123/0",
+      "updated": "2016-04-08T11:07:21.08364Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "$>",
+      "links": [
+        {
+          "uri": "http://localhost:2113/streams/order-123/0",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://localhost:2113/streams/order-123/0",
+          "relation": "alternate"
+        }
+      ]
+    }
+  ]
+}

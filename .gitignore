@@ -4,3 +4,4 @@ AtomicPuppy.egg-info/
 dist
 *.log
 .tox/
+*.swp
