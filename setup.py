@@ -22,16 +22,16 @@ tests_require = [
 
 setup(
     name="AtomicPuppy",
-    version="0.2.2",
+    version="0.2.3",
     packages=find_packages(),
     dependency_links=[
         "git+https://github.com/OddBloke/HTTPretty.git@f899d1bda8234658c2cec5aab027cb5b7c42203c#egg=HTTPretty"
     ],
     install_requires=install_requires,
     tests_require=tests_require,
-    url = 'https://github.com/madedotcom/atomicpuppy',
-    download_url = 'https://github.com/madedotcom/atomicpuppy/tarball/0.2.2',
-    description = 'A service-activator component for eventstore',
-    author = 'Bob Gregory',
-    keywords = ['eventstore'],
+    url='https://github.com/madedotcom/atomicpuppy',
+    download_url='https://github.com/madedotcom/atomicpuppy/tarball/0.2.3',
+    description='A service-activator component for eventstore',
+    author='Bob Gregory',
+    keywords=['eventstore'],
 )
