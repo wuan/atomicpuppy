@@ -224,6 +224,11 @@ class StreamReader:
     def _make_event(self, e):
         try:
             data = json.loads(e["data"], encoding='UTF-8')
+        except KeyError:
+            # Eventstore allows events with no `data` to be posted. If that
+            # happens, then atomicpuppy doesn't know what to do
+            self.logger.warning("No `data` key found on event {}".format(e))
+            return None
         except ValueError:
             self.logger.error("Failed to parse json data for %s message %s",
                               e.get("eventType"), e.get("eventId"))

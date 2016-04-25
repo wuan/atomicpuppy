@@ -108,6 +108,30 @@ class When_a_stream_contains_a_single_event_and_the_counter_is_at_the_start(Stre
         assert(self.the_event.stream == "newstream")
 
 
+class When_an_event_contains_no_data(StreamReaderContext):
+
+    _event = None
+
+    def given_a_feed_containing_one_event(self):
+        self.http.registerJsonUri(
+            'http://eventstore.local:2113/streams/newstream/0/forward/20',
+            SCRIPT_PATH + '/responses/single-event-no-data.json')
+
+    def because_we_start_the_reader(self):
+        self._log = SpyLog()
+        with(self._log.capture()):
+            self.subscribe_and_run('newstream')
+
+    def it_should_return_a_none_event(self):
+        assert(self._queue.empty())
+
+    def it_should_log_a_warning(self):
+        for r in self._log._logs:
+            print(r.msg)
+        assert(any(r.msg.startswith("No `data` key found on event")
+                   and r.levelno == logging.WARNING
+                   for r in self._log._logs))
+
 class When_a_feed_contains_multiple_events(StreamReaderContext):
 
     _the_events = []
