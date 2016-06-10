@@ -25,7 +25,8 @@ class When_a_message_is_posted:
         httpretty.register_uri(
             httpretty.POST,
             "http://fakehost:42/streams/{}".format(self.stream),
-            body='{}')
+            body='{}'
+        )
 
         data = {'foo': 'bar'}
         evt = Event(self.event_id, 'my-event-type', data, self.stream, None)

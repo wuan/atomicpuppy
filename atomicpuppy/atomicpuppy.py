@@ -1,27 +1,35 @@
-import aiohttp
-import asyncio
 import datetime
 from enum import Enum
-from .errors import *
 import json
 import logging
-from collections import namedtuple, defaultdict
 import platform
-import pybreaker
+from uuid import UUID
+from concurrent.futures import TimeoutError
+
 from retrying import retry
+import yaml
+
+import aiohttp
+import asyncio
+from .errors import *
+from collections import namedtuple, defaultdict
+import pybreaker
 import random
 import redis
 import requests
-from uuid import UUID
-import yaml
-from concurrent.futures import TimeoutError
 
-SubscriptionConfig = namedtuple('SubscriptionConfig', ['streams',
-                                                       'counter_factory',
-                                                       'instance_name',
-                                                       'host',
-                                                       'port',
-                                                       'timeout'])
+
+SubscriptionConfig = namedtuple(
+    'SubscriptionConfig',
+    [
+        'streams',
+        'counter_factory',
+        'instance_name',
+        'host',
+        'port',
+        'timeout'
+    ]
+)
 
 
 class Event:
@@ -34,7 +42,12 @@ class Event:
         self.sequence = sequence
 
     def __str__(self):
-        return "{}-{} ({}): {}".format(self.type, self.sequence, self.id, self.data)
+        return "{}-{} ({}): {}".format(
+            self.type,
+            self.sequence,
+            self.id,
+            self.data
+        )
 
 
 class EventCounterCircuitBreaker(pybreaker.CircuitBreakerListener):
@@ -43,22 +56,22 @@ class EventCounterCircuitBreaker(pybreaker.CircuitBreakerListener):
         self._log = logging.getLogger(__name__)
 
     def before_call(self, cb, func, *args, **kwargs):
-        "Called before the circuit breaker `cb` calls `func`."
+        """Called before the circuit breaker `cb` calls `func`."""
         pass
 
     def state_change(self, cb, old_state, new_state):
-        if(new_state.name == 'open'):
+        if new_state.name == 'open':
             self._log.error("Opening event counter circuit")
-        elif(new_state.name == 'closed'):
+        elif new_state.name == 'closed':
             self._log.info("Event counter circuit closed")
         pass
 
     def failure(self, cb, exc):
-        "Called when a function invocation raises a system error."
+        """Called when a function invocation raises a system error."""
         pass
 
     def success(self, cb):
-        "Called when a function invocation succeeds."
+        """Called when a function invocation succeeds."""
         pass
 
 
@@ -71,11 +84,7 @@ redis_circuit = pybreaker.CircuitBreaker(
 
 class SubscriberInfo:
 
-    def __init__(
-            self,
-            stream,
-            uri,
-            last_read=-1):
+    def __init__(self, stream, uri, last_read=-1):
         self._stream = stream
         self._uri = uri
         self._last_read = last_read
@@ -96,20 +105,30 @@ class SubscriberInfo:
 class StreamReader:
 
     def __init__(self, queue, stream_name, loop, instance_name, subscriptions_store, timeout, nosleep=False):
-        self._fetcher = StreamFetcher(None, loop=loop, nosleep=nosleep, timeout=timeout)
+        self._fetcher = StreamFetcher(
+            None, loop=loop,
+            nosleep=nosleep,
+            timeout=timeout
+        )
         self._queue = queue
         self._loop = loop
         self._stream = stream_name
         self._subscriptions = subscriptions_store
-        self.logger = logging.getLogger('atomicpuppy.stream-reader@{}/{}'.format(instance_name, stream_name))
+        self.logger = logging.getLogger(
+            'atomicpuppy.stream-reader@{}/{}'.format(
+                instance_name,
+                stream_name
+            )
+        )
+        self._running = None
 
     @asyncio.coroutine
     def start_consuming(self, once=False):
         self._running = True
-        while(self._running):
+        while self._running:
             try:
                 yield from self.consume()
-                if(once or not self._running):
+                if once or not self._running:
                     break
                 yield from asyncio.sleep(5)
             except UrlError as e:
@@ -134,26 +153,29 @@ class StreamReader:
     @asyncio.coroutine
     def consume(self):
         subscription = self._subscriptions.get(self._stream)
-        if(subscription.last_read > -1):
+        if subscription.last_read > -1:
             self.logger.debug(
                 "Last read event is %d - seeking last read on page %s",
                 subscription.last_read,
-                subscription.uri)
+                subscription.uri
+            )
             yield from self.seek_on_page(subscription.uri)
         else:
             r = yield from self._fetcher.fetch(subscription.uri)
             js = yield from r.json()
 
             last = self._get_link(js, "last")
-            if(last):
+            if last:
                 self.logger.debug(
                     "No last read event, skipping to last page %s",
-                    last)
+                    last
+                )
                 yield from self._walk_from_last(last)
             else:
                 self.logger.debug(
                     "No last read event, yielding events from this page %s",
-                    subscription.uri)
+                    subscription.uri
+                )
                 yield from self._raise_page_events(js)
 
     @asyncio.coroutine
@@ -191,11 +213,11 @@ class StreamReader:
         subscription = self._subscriptions.get(self._stream)
         stack = []
         for e in js['entries']:
-            if(e["positionEventNumber"] > subscription.last_read):
+            if e["positionEventNumber"] > subscription.last_read:
                 stack.append(e)
-        while(stack):
+        while stack:
             evt = self._make_event(stack.pop())
-            if(evt):
+            if evt:
                 yield from self._queue.put(evt)
                 self._subscriptions.update_sequence(self._stream, evt.sequence)
 
@@ -203,22 +225,23 @@ class StreamReader:
     def seek_to_last_read(self, js):
         subscription = self._subscriptions.get(self._stream)
         for e in js["entries"]:
-            if(e["positionEventNumber"] <= subscription.last_read):
+            if e["positionEventNumber"] <= subscription.last_read:
                 self.logger.debug(
-                    "Found last read event on current page, raising events")
+                    "Found last read event on current page, raising events"
+                )
                 yield from self._raise_page_events(js)
                 prev = self._get_link(js, "previous")
-                if(prev):
+                if prev:
                     yield from self._walk_from_last(prev)
                     return
 
         nxt = self._get_link(js, "next")
-        if(nxt):
+        if nxt:
             yield from self.seek_on_page(nxt)
 
     def _get_link(self, js, rel):
         for link in js["links"]:
-            if(link["relation"] == rel):
+            if link["relation"] == rel:
                 return link["uri"]
 
     def _make_event(self, e):
@@ -230,8 +253,11 @@ class StreamReader:
             self.logger.warning("No `data` key found on event {}".format(e))
             return None
         except ValueError:
-            self.logger.error("Failed to parse json data for %s message %s",
-                              e.get("eventType"), e.get("eventId"))
+            self.logger.error(
+                "Failed to parse json data for %s message %s",
+                e.get("eventType"),
+                e.get("eventId")
+            )
             return None
         type = e["eventType"]
         id = UUID(e["eventId"])
@@ -261,7 +287,7 @@ class StreamFetcher:
 
     def stop(self):
         self._running = False
-        if(self._sleep):
+        if self._sleep:
             self._sleep.cancel()
 
     def sleeps(self, uri):
@@ -269,36 +295,39 @@ class StreamFetcher:
         attempts = 0
         last_time = 0
         self._state = state.amber
-        while(True):
-            if(last_time < max_time):
+        while True:
+            if last_time < max_time:
                 attempts = attempts + 1
             elif self._state == state.amber:
                 self._state = state.red
                 self._log.error(
                     "Stream fetcher has failed to connect to eventstore at %s in the last %d attempts",
                     uri,
-                    attempts)
-            last_time = (2**attempts)
+                    attempts
+                )
+            last_time = (2 ** attempts)
             jitter = random.uniform(-0.5, 0.5)
             yield (last_time) + jitter
 
     def log(self, e, uri):
-        if(type(e) not in self._exns):
+        if type(e) not in self._exns:
             self._log.warn(
                 "Error occurred while requesting %s",
                 uri,
-                exc_info=True)
+                exc_info=True
+            )
             self._exns.add(type(e))
 
     @asyncio.coroutine
     def sleep(self, delay):
-        if(self._nosleep):
+        if self._nosleep:
             return
         self._sleep = asyncio.futures.Future(loop=self._loop)
         self._sleep._loop.call_later(
             delay,
             self._sleep._set_result_unless_cancelled,
-            None)
+            None
+        )
         self._log.debug("retrying fetch in %d seconds", delay)
         yield from self._sleep
 
@@ -325,17 +354,21 @@ class StreamFetcher:
                     self._timeout,
                     loop=self._loop
                 )
-                if(response.status == 200):
+                if response.status == 200:
                     return response
                 if response.status in (404, 408):
                     raise HttpServerError(uri, response.status)
-                if(response.status >= 400 and response.status <= 499):
+                if response.status >= 400 and response.status <= 499:
                     raise HttpClientError(uri, response.status)
-                if(response.status >= 500 and response.status <= 599):
+                if response.status >= 500 and response.status <= 599:
                     raise HttpServerError(uri, response.status)
             except ValueError as e:
                 raise UrlError(e)
-            except (aiohttp.errors.ClientError, aiohttp.errors.DisconnectedError, aiohttp.errors.ClientResponseError) as e:
+            except (
+                    aiohttp.errors.ClientError,
+                    aiohttp.errors.DisconnectedError,
+                    aiohttp.errors.ClientResponseError
+            ) as e:
                 self.log(e, uri)
                 yield from self.sleep(s)
             except HttpServerError as e:
@@ -344,7 +377,6 @@ class StreamFetcher:
             except TimeoutError as e:
                 self.log(e, uri)
                 yield from self.sleep(s)
-
 
 
 class EventRaiser:
@@ -363,11 +395,13 @@ class EventRaiser:
     @asyncio.coroutine
     def start(self):
         self._is_running = True
-        while(self._loop.is_running() and self._is_running):
+        while self._loop.is_running() and self._is_running:
             try:
-                msg = yield from asyncio.wait_for(self._queue.get(),
-                                                  timeout=1,
-                                                  loop=self._loop)
+                msg = yield from asyncio.wait_for(
+                    self._queue.get(),
+                    timeout=1,
+                    loop=self._loop
+                )
                 if not msg:
                     continue
                 self._callback(msg)
@@ -378,22 +412,25 @@ class EventRaiser:
                 except RedisError:
                     self._logger.warn("Failed to persist last read event")
             except RejectedMessageException:
-                self._logger.warn("%s message %s was rejected and has not been processed",
-                                  msg.type, msg.id)
-            except(TimeoutError):
+                self._logger.warn(
+                    "%s message %s was rejected and has not been processed",
+                    msg.type,
+                    msg.id)
+            except TimeoutError:
                 pass
             except:
                 self._logger.exception("Failed to process message %s", msg)
 
-
     @asyncio.coroutine
     def consume_events(self):
         self._is_running = True
-        while(self._loop.is_running() and self._is_running):
+        while self._loop.is_running() and self._is_running:
             try:
-                msg = yield from asyncio.wait_for(self._queue.get(),
-                                                  timeout=1,
-                                                  loop=self._loop)
+                msg = yield from asyncio.wait_for(
+                    self._queue.get(),
+                    timeout=1,
+                    loop=self._loop
+                )
                 if not msg:
                     self._is_running = False
                     return
@@ -405,9 +442,11 @@ class EventRaiser:
                 except RedisError:
                     self._logger.warn("Failed to persist last read event")
             except RejectedMessageException:
-                self._logger.warn("%s message %s was rejected and has not been processed",
-                                  msg.type, msg.id)
-            except(TimeoutError):
+                self._logger.warn(
+                    "%s message %s was rejected and has not been processed",
+                    msg.type,
+                    msg.id)
+            except TimeoutError:
                 self._is_running = False
             except:
                 self._logger.exception("Failed to process message %s", msg)
@@ -430,12 +469,15 @@ class RedisCounter(EventCounter):
         self._instance_name = instance
         self._logger = logging.getLogger(__name__)
 
-    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=60000)
+    @retry(
+        wait_exponential_multiplier=1000,
+        wait_exponential_max=10000,
+        stop_max_delay=60000)
     def __getitem__(self, stream):
-        self._logger.debug("Fetching last read event for stream "+stream)
+        self._logger.debug("Fetching last read event for stream " + stream)
         key = self._key(stream)
         val = self._redis.get(key)
-        if(val):
+        if val:
             val = int(val)
             self._logger.info(
                 "Last read event for stream %s is %d",
@@ -450,7 +492,7 @@ class RedisCounter(EventCounter):
         self._redis.set(key, val)
 
     def _key(self, stream):
-        return "urn:atomicpuppy:"+self._instance_name+":"+stream+":position"
+        return "urn:atomicpuppy:" + self._instance_name + ":" + stream + ":position"
 
 
 class StreamConfigReader:
@@ -468,32 +510,35 @@ class StreamConfigReader:
         else:
             cfg = yaml.load(config_file).get('atomicpuppy')
 
-
         streams = []
         instance = cfg.get('instance') or platform.node()
         for stream in cfg.get("streams"):
             streams.append(stream)
         ctr = self._make_counter(cfg, instance)
-        return SubscriptionConfig(streams=streams,
-                                  counter_factory=ctr,
-                                  instance_name=instance,
-                                  host=cfg.get("host") or 'localhost',
-                                  port=cfg.get("port") or 2113,
-                                  timeout=cfg.get("timeout") or 20)
+        return SubscriptionConfig(
+            streams=streams,
+            counter_factory=ctr,
+            instance_name=instance,
+            host=cfg.get("host") or 'localhost',
+            port=cfg.get("port") or 2113,
+            timeout=cfg.get("timeout") or 20
+        )
 
     def _make_counter(self, cfg, instance):
         ctr = cfg.get('counter')
-        if(not ctr):
-            return (lambda: defaultdict(lambda: -1))
-        if(ctr["redis"]):
+        if not ctr:
+            return lambda: defaultdict(lambda: -1)
+        if ctr["redis"]:
             return lambda: RedisCounter(
-                redis.StrictRedis(port=ctr["redis"].get("port"),
-                                  host=ctr["redis"].get("host")),
-                instance)
+                redis.StrictRedis(
+                    port=ctr["redis"].get("port"),
+                    host=ctr["redis"].get("host")
+                ),
+                instance
+            )
 
 
 class SubscriptionInfoStore:
-
     """
     This class acts like an in-memory buffer of subscriptions.
     It keeps track of subscriptions based on the stream_name
@@ -514,8 +559,20 @@ class SubscriptionInfoStore:
         parsed_name = self._parse(stream_name)
         if parsed_name not in self.subscriptions.keys():
             last_read_for_stream = self.counter[parsed_name]
-            self._logger.info("Creating new SubscriberInfo for {} from event number {}".format(parsed_name, last_read_for_stream))
-            s = SubscriberInfo(parsed_name, uri=self._build_uri(parsed_name, last_read_for_stream), last_read=last_read_for_stream)
+            self._logger.info(
+                "Creating new SubscriberInfo for {} from event number {}".format(
+                    parsed_name,
+                    last_read_for_stream
+                )
+            )
+            s = SubscriberInfo(
+                parsed_name,
+                uri=self._build_uri(
+                    parsed_name,
+                    last_read_for_stream
+                ),
+                last_read=last_read_for_stream
+            )
             self.subscriptions[parsed_name] = s
 
         return self.subscriptions[parsed_name]
@@ -526,9 +583,10 @@ class SubscriptionInfoStore:
         new_subscription = SubscriberInfo(
             stream=s._stream,
             uri=s.uri,
-            last_read=sequence)
+            last_read=sequence
+        )
         old_subscription = self.subscriptions[s._stream]
-        assert(old_subscription.last_read < sequence)
+        assert (old_subscription.last_read < sequence)
         self.subscriptions[s._stream] = new_subscription
 
     def update_uri(self, stream_name, uri):
@@ -537,7 +595,8 @@ class SubscriptionInfoStore:
         new_subscription = SubscriberInfo(
             stream=s._stream,
             uri=uri,
-            last_read=s.last_read)
+            last_read=s.last_read
+        )
         self.subscriptions[s._stream] = new_subscription
 
     def _build_uri(self, stream_name, last_read_for_stream=-1):
@@ -545,7 +604,11 @@ class SubscriptionInfoStore:
             last_read_for_stream = 0
 
         return 'http://{}:{}/streams/{}/{}/forward/20'.format(
-            self.config.host, self.config.port, stream_name, last_read_for_stream)
+            self.config.host,
+            self.config.port,
+            stream_name,
+            last_read_for_stream
+        )
 
     def _parse(self, stream_name):
         if '#date#' not in stream_name:
@@ -559,7 +622,7 @@ class EventStoreJsonEncoder(json.JSONEncoder):
 
     def default(self, o):
         try:
-            if(isinstance(o, UUID)):
+            if isinstance(o, UUID):
                 return str(o)
             return json.JSONEncoder.default(self, o)
         except e:
@@ -572,28 +635,41 @@ class EventPublisher:
         self._es_url = '{}:{}'.format(host, port)
         self._logger = logging.getLogger("EventPublisher")
 
-    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=30000,
-           retry_on_result=lambda r: r.status_code >= 500)
+    @retry(
+        wait_exponential_multiplier=1000,
+        wait_exponential_max=10000,
+        stop_max_delay=30000,
+        retry_on_result=lambda r: r.status_code >= 500)
     def post(self, event, correlation_id=None):
         uri = 'http://{}/streams/{}'.format(self._es_url, event.stream)
-        headers = {'ES-EventType': str(event.type), 'ES-EventId': str(event.id), 'Content-Type': 'application/json'}
+        headers = {
+            'ES-EventType': str(event.type),
+            'ES-EventId': str(event.id),
+            'Content-Type': 'application/json'
+        }
         extra = dict(event.__dict__)
         extra.update(headers)
         extra.update({
             'es_uri': uri,
             'method': 'POST'
         })
-        self._logger.info("Posting event {} to {}. Headers: {}".format(event.__dict__, uri, headers), extra=extra)
-        if(correlation_id):
+        self._logger.info(
+            "Posting event {} to {}. Headers: {}".format(
+                event.__dict__, uri, headers), extra=extra)
+        if correlation_id:
             event.data["correlation_id"] = correlation_id
         r = requests.post(
             uri,
             headers=headers,
             data=EventStoreJsonEncoder().encode(event.data),
-            timeout=0.5)
+            timeout=0.5
+        )
         if r.status_code:
             extra.update({
                 'status_code': r.status_code
             })
-            self._logger.info("Received status code {status_code} from EventStore POST.".format(**extra), extra=extra)
+            self._logger.info(
+                "Received status code {status_code} from EventStore POST.".format(**extra),
+                extra=extra
+            )
         return r

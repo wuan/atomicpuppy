@@ -13,12 +13,10 @@ import asyncio
 
 
 class AtomicPuppy:
-
     running = False
 
     def __init__(self, cfg_file, callback, loop=None):
         self.config = StreamConfigReader().read(cfg_file)
-
 
         self.callback = callback
         self._loop = loop or asyncio.get_event_loop()
@@ -26,10 +24,12 @@ class AtomicPuppy:
 
     def start(self, run_once=False):
         c = self.counter = self.config.counter_factory()
-        self._messageProcessor = EventRaiser(self._queue,
-                                             c,
-                                             self.callback,
-                                             self._loop)
+        self._messageProcessor = EventRaiser(
+            self._queue,
+            c,
+            self.callback,
+            self._loop
+        )
         subscription_info_store = SubscriptionInfoStore(self.config, c)
         self.readers = [
             StreamReader(
@@ -38,7 +38,8 @@ class AtomicPuppy:
                 loop=self._loop,
                 instance_name=self.config.instance_name,
                 subscriptions_store=subscription_info_store,
-                timeout=self.config.timeout)
+                timeout=self.config.timeout
+            )
             for s in self.config.streams
         ]
         self.tasks = [s.start_consuming(once=run_once) for s in self.readers]
