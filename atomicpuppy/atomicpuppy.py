@@ -221,54 +221,57 @@ class StreamReader:
         for entry in stream_data['entries']:
             if entry["positionEventNumber"] > subscription.last_read:
                 stack.append(entry)
-        while stack:
-            event = self._make_event(stack.pop())
+
+        # eventstore returns events starting from the most recent, we need to reverse the order
+        stack.reverse()
+        for event_data in stack:
+            event = self._make_event(event_data)
             if event:
                 yield from self._queue.put(event)
                 self._subscriptions.update_sequence(self._stream, event.sequence)
 
     @asyncio.coroutine
-    def seek_to_last_read(self, js):
+    def seek_to_last_read(self, stream_data):
         subscription = self._subscriptions.get(self._stream)
-        for e in js["entries"]:
-            if e["positionEventNumber"] <= subscription.last_read:
+        for entry in stream_data["entries"]:
+            if entry["positionEventNumber"] <= subscription.last_read:
                 self.logger.debug(
                     "Found last read event on current page, raising events"
                 )
-                yield from self._raise_page_events(js)
-                prev = self._get_link(js, "previous")
-                if prev:
-                    yield from self._walk_from_last(prev)
+                yield from self._raise_page_events(stream_data)
+                previous = self._get_link(stream_data, "previous")
+                if previous:
+                    yield from self._walk_from_last(previous)
                     return
 
-        nxt = self._get_link(js, "next")
+        nxt = self._get_link(stream_data, "next")
         if nxt:
             yield from self.seek_on_page(nxt)
 
-    def _get_link(self, js, rel):
-        for link in js["links"]:
-            if link["relation"] == rel:
+    def _get_link(self, stream_data, relation):
+        for link in stream_data["links"]:
+            if link["relation"] == relation:
                 return link["uri"]
 
-    def _make_event(self, e):
+    def _make_event(self, event_data):
         try:
-            data = json.loads(e["data"], encoding='UTF-8')
+            data = json.loads(event_data["data"], encoding='UTF-8')
         except KeyError:
             # Eventstore allows events with no `data` to be posted. If that
             # happens, then atomicpuppy doesn't know what to do
-            self.logger.warning("No `data` key found on event {}".format(e))
+            self.logger.warning("No `data` key found on event {}".format(event_data))
             return None
         except ValueError:
             self.logger.error(
                 "Failed to parse json data for %s message %s",
-                e.get("eventType"),
-                e.get("eventId")
+                event_data.get("eventType"),
+                event_data.get("eventId")
             )
             return None
-        type = e["eventType"]
-        id = UUID(e["eventId"])
-        stream = e["positionStreamId"]
-        sequence = e["positionEventNumber"]
+        type = event_data["eventType"]
+        id = UUID(event_data["eventId"])
+        stream = event_data["positionStreamId"]
+        sequence = event_data["positionEventNumber"]
         return Event(id, type, data, stream, sequence)
 
 
@@ -288,7 +291,7 @@ class StreamFetcher:
         self._running = True
         self._sleep = None
         self._nosleep = nosleep
-        self._exns = set()
+        self._exceptions = set()
         self._timeout = timeout
 
     def stop(self):
@@ -303,7 +306,7 @@ class StreamFetcher:
         self._state = state.amber
         while True:
             if last_time < max_time:
-                attempts = attempts + 1
+                attempts += 1
             elif self._state == state.amber:
                 self._state = state.red
                 self._log.error(
@@ -311,18 +314,18 @@ class StreamFetcher:
                     uri,
                     attempts
                 )
-            last_time = (2 ** attempts)
+            last_time = 2 ** attempts
             jitter = random.uniform(-0.5, 0.5)
-            yield (last_time) + jitter
+            yield last_time + jitter
 
     def log(self, e, uri):
-        if type(e) not in self._exns:
+        if type(e) not in self._exceptions:
             self._log.warn(
                 "Error occurred while requesting %s",
                 uri,
                 exc_info=True
             )
-            self._exns.add(type(e))
+            self._exceptions.add(type(e))
 
     @asyncio.coroutine
     def sleep(self, delay):
@@ -340,7 +343,7 @@ class StreamFetcher:
     @asyncio.coroutine
     def fetch(self, uri):
         sleep_times = self.sleeps(uri)
-        self._exns = set()
+        self._exceptions = set()
         self._state = state.green
         for s in sleep_times:
             headers = {"Accept": "application/json"}
@@ -365,16 +368,16 @@ class StreamFetcher:
                     return response
                 if response.status in (404, 408):
                     raise HttpServerError(uri, response.status)
-                if response.status >= 400 and response.status <= 499:
+                if 400 <= response.status <= 499:
                     raise HttpClientError(uri, response.status)
-                if response.status >= 500 and response.status <= 599:
+                if 500 <= response.status <= 599:
                     raise HttpServerError(uri, response.status)
             except ValueError as e:
                 raise UrlError(e)
             except (
-                    aiohttp.errors.ClientError,
-                    aiohttp.errors.DisconnectedError,
-                    aiohttp.errors.ClientResponseError
+                aiohttp.errors.ClientError,
+                aiohttp.errors.DisconnectedError,
+                aiohttp.errors.ClientResponseError
             ) as e:
                 self.log(e, uri)
                 yield from self.sleep(s)
@@ -485,20 +488,21 @@ class RedisCounter(EventCounter):
     def __getitem__(self, stream):
         self._logger.debug("Fetching last read event for stream " + stream)
         key = self._key(stream)
-        val = self._redis.get(key)
-        if val:
-            val = int(val)
+        value = self._redis.get(key)
+        if value:
+            value = int(value)
             self._logger.info(
                 "Last read event for stream %s is %d",
                 stream,
-                val)
-            return val
+                value
+            )
+            return value
         return -1
 
     @redis_circuit
-    def __setitem__(self, stream, val):
+    def __setitem__(self, stream, value):
         key = self._key(stream)
-        self._redis.set(key, val)
+        self._redis.set(key, value)
 
     def _key(self, stream):
         return "urn:atomicpuppy:" + self._instance_name + ":" + stream + ":position"
@@ -506,42 +510,38 @@ class RedisCounter(EventCounter):
 
 class StreamConfigReader:
 
-    def __init__(self):
-        pass
-
     def read(self, config_file):
-        cfg = None
         if isinstance(config_file, dict):
-            cfg = config_file.get('atomicpuppy')
+            config = config_file.get('atomicpuppy')
         elif isinstance(config_file, str):
             with open(config_file) as file:
-                cfg = yaml.load(file).get('atomicpuppy')
+                config = yaml.load(file).get('atomicpuppy')
         else:
-            cfg = yaml.load(config_file).get('atomicpuppy')
+            config = yaml.load(config_file).get('atomicpuppy')
 
         streams = []
-        instance = cfg.get('instance') or platform.node()
-        for stream in cfg.get("streams"):
+        instance = config.get('instance') or platform.node()
+        for stream in config.get("streams"):
             streams.append(stream)
-        ctr = self._make_counter(cfg, instance)
+        counter = self._make_counter(config, instance)
         return SubscriptionConfig(
             streams=streams,
-            counter_factory=ctr,
+            counter_factory=counter,
             instance_name=instance,
-            host=cfg.get("host") or 'localhost',
-            port=cfg.get("port") or 2113,
-            timeout=cfg.get("timeout") or 20
+            host=config.get("host") or 'localhost',
+            port=config.get("port") or 2113,
+            timeout=config.get("timeout") or 20
         )
 
     def _make_counter(self, cfg, instance):
-        ctr = cfg.get('counter')
-        if not ctr:
+        counter = cfg.get('counter')
+        if not counter:
             return lambda: defaultdict(lambda: -1)
-        if ctr["redis"]:
+        if counter["redis"]:
             return lambda: RedisCounter(
                 redis.StrictRedis(
-                    port=ctr["redis"].get("port"),
-                    host=ctr["redis"].get("host")
+                    port=counter["redis"].get("port"),
+                    host=counter["redis"].get("host")
                 ),
                 instance
             )
@@ -574,7 +574,7 @@ class SubscriptionInfoStore:
                     last_read_for_stream
                 )
             )
-            s = SubscriberInfo(
+            self.subscriptions[parsed_name] = SubscriberInfo(
                 parsed_name,
                 uri=self._build_uri(
                     parsed_name,
@@ -582,31 +582,30 @@ class SubscriptionInfoStore:
                 ),
                 last_read=last_read_for_stream
             )
-            self.subscriptions[parsed_name] = s
 
         return self.subscriptions[parsed_name]
 
     def update_sequence(self, stream_name, sequence):
         # the input stream_name can be the unparsed name
-        s = self.get(stream_name)
-        new_subscription = SubscriberInfo(
-            stream=s._stream,
-            uri=s.uri,
+        subscription = self.get(stream_name)
+        subscriber_info = SubscriberInfo(
+            stream=subscription._stream,
+            uri=subscription.uri,
             last_read=sequence
         )
-        old_subscription = self.subscriptions[s._stream]
+        old_subscription = self.subscriptions[subscription._stream]
         assert (old_subscription.last_read < sequence)
-        self.subscriptions[s._stream] = new_subscription
+        self.subscriptions[subscription._stream] = subscriber_info
 
     def update_uri(self, stream_name, uri):
         # the input stream_name can be the unparsed name
-        s = self.get(stream_name)
+        subscription = self.get(stream_name)
         new_subscription = SubscriberInfo(
-            stream=s._stream,
+            stream=subscription._stream,
             uri=uri,
-            last_read=s.last_read
+            last_read=subscription.last_read
         )
-        self.subscriptions[s._stream] = new_subscription
+        self.subscriptions[subscription._stream] = new_subscription
 
     def _build_uri(self, stream_name, last_read_for_stream=-1):
         if last_read_for_stream < 0:
@@ -629,13 +628,13 @@ class SubscriptionInfoStore:
 
 class EventStoreJsonEncoder(json.JSONEncoder):
 
-    def default(self, o):
+    def default(self, object):
         try:
-            if isinstance(o, UUID):
-                return str(o)
-            return json.JSONEncoder.default(self, o)
-        except e:
-            logging.error(type(o))
+            if isinstance(object, UUID):
+                return str(object)
+            return json.JSONEncoder.default(self, object)
+        except:
+            logging.error(type(object))
 
 
 class EventPublisher:
@@ -667,18 +666,18 @@ class EventPublisher:
                 event.__dict__, uri, headers), extra=extra)
         if correlation_id:
             event.data["correlation_id"] = correlation_id
-        r = requests.post(
+        response = requests.post(
             uri,
             headers=headers,
             data=EventStoreJsonEncoder().encode(event.data),
             timeout=0.5
         )
-        if r.status_code:
+        if response.status_code:
             extra.update({
-                'status_code': r.status_code
+                'status_code': response.status_code
             })
             self._logger.info(
                 "Received status code {status_code} from EventStore POST.".format(**extra),
                 extra=extra
             )
-        return r
+        return response
