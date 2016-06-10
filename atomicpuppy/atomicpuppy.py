@@ -127,10 +127,15 @@ class StreamReader:
 
     @asyncio.coroutine
     def start_consuming(self, run_once=False):
+        """
+        Starting a blocking consumption of the stream.
+
+        :param: run_once Set this param to True to consume all the events in the stream and return.
+        """
         self._running = True
         while self._running:
             try:
-                yield from self.consume()
+                yield from self._consume()
                 if run_once or not self._running:
                     break
                 yield from asyncio.sleep(5)
@@ -156,7 +161,10 @@ class StreamReader:
         self._fetcher.stop()
 
     @asyncio.coroutine
-    def consume(self):
+    def _consume(self):
+        """
+        Start from the last read event and consume all of the remaining events.
+        """
         subscription = self._subscriptions.get(self._stream)
         if subscription.last_read > -1:
             self.logger.debug(
@@ -164,7 +172,7 @@ class StreamReader:
                 subscription.last_read,
                 subscription.uri
             )
-            yield from self.seek_on_page(subscription.uri)
+            yield from self.read_events_from_page(subscription.uri)
         else:
             response = yield from self._fetcher.fetch(subscription.uri)
             stream_data = yield from response.json()
@@ -175,47 +183,65 @@ class StreamReader:
                     "No last read event, skipping to last page %s",
                     last_read_event
                 )
-                yield from self._walk_from_last(last_read_event)
+                yield from self._walk_from_page(last_read_event)
             else:
                 self.logger.debug(
                     "No last read event, yielding events from this page %s",
                     subscription.uri
                 )
-                yield from self._raise_page_events(stream_data)
+                yield from self._queue_page_events(stream_data)
 
     @asyncio.coroutine
-    def seek_on_page(self, uri):
+    def read_events_from_page(self, uri):
         self.logger.debug("Looking for last read event on page %s", uri)
         response = yield from self._fetcher.fetch(uri)
         stream_data = yield from response.json()
-        yield from self.seek_to_last_read(stream_data)
+        subscription = self._subscriptions.get(self._stream)
+        for entry in stream_data["entries"]:
+            if entry["positionEventNumber"] <= subscription.last_read:
+                self.logger.debug(
+                    "Found last read event on current page, raising events"
+                )
+                yield from self._queue_page_events(stream_data)
+                previous = self._get_link(stream_data, "previous")
+                if previous:
+                    yield from self._walk_from_page(previous)
+                    return
+
+        next_page = self._get_link(stream_data, "next")
+        if next_page:
+            yield from self.read_events_from_page(next_page)
 
     @asyncio.coroutine
-    def _walk_from_last(self, prev_uri):
-        uri = prev_uri
+    def _walk_from_page(self, previous_page_uri):
+        current_page_uri = previous_page_uri
         while True:
-            self.logger.debug("walking backwards from %s", uri)
-            response = yield from self._fetcher.fetch(uri)
+            self.logger.debug("walking backwards from %s", current_page_uri)
+            response = yield from self._fetcher.fetch(current_page_uri)
             stream_data = yield from response.json()
             if stream_data["entries"]:
-                self.logger.debug("raising events from page %s", uri)
-                yield from self._raise_page_events(stream_data)
-            prev_uri = self._get_link(stream_data, "previous")
-            if not prev_uri:
+                self.logger.debug("raising events from page %s", current_page_uri)
+                yield from self._queue_page_events(stream_data)
+            new_page_uri = self._get_link(stream_data, "previous")
+            if not new_page_uri:
                 # loop until there's a prev link, otherwise it means
                 # we are at the end or we are fetching an empty page
                 self.logger.debug(
                     "back-walk completed, new polling uri is %s",
-                    uri
+                    current_page_uri
                 )
-                self._subscriptions.update_uri(self._stream, uri)
+                self._subscriptions.update_uri(self._stream, current_page_uri)
                 break
 
-            self.logger.debug("Continuing to previous page %s", prev_uri)
-            uri = prev_uri
+            self.logger.debug("Continuing to previous page %s", current_page_uri)
+            current_page_uri = new_page_uri
 
     @asyncio.coroutine
-    def _raise_page_events(self, stream_data):
+    def _queue_page_events(self, stream_data):
+        """
+        This function takes a stream page data, and puts all events on the queue, which later
+        will be pushed to the callback.
+        """
         subscription = self._subscriptions.get(self._stream)
         stack = []
         for entry in stream_data['entries']:
@@ -230,49 +256,33 @@ class StreamReader:
                 yield from self._queue.put(event)
                 self._subscriptions.update_sequence(self._stream, event.sequence)
 
-    @asyncio.coroutine
-    def seek_to_last_read(self, stream_data):
-        subscription = self._subscriptions.get(self._stream)
-        for entry in stream_data["entries"]:
-            if entry["positionEventNumber"] <= subscription.last_read:
-                self.logger.debug(
-                    "Found last read event on current page, raising events"
-                )
-                yield from self._raise_page_events(stream_data)
-                previous = self._get_link(stream_data, "previous")
-                if previous:
-                    yield from self._walk_from_last(previous)
-                    return
-
-        nxt = self._get_link(stream_data, "next")
-        if nxt:
-            yield from self.seek_on_page(nxt)
-
     def _get_link(self, stream_data, relation):
         for link in stream_data["links"]:
             if link["relation"] == relation:
                 return link["uri"]
 
-    def _make_event(self, event_data):
+    def _make_event(self, event_metadata):
         try:
-            data = json.loads(event_data["data"], encoding='UTF-8')
+            event_data = json.loads(event_metadata["data"], encoding='UTF-8')
         except KeyError:
             # Eventstore allows events with no `data` to be posted. If that
             # happens, then atomicpuppy doesn't know what to do
-            self.logger.warning("No `data` key found on event {}".format(event_data))
+            self.logger.warning("No `data` key found on event {}".format(event_metadata))
             return None
         except ValueError:
             self.logger.error(
                 "Failed to parse json data for %s message %s",
-                event_data.get("eventType"),
-                event_data.get("eventId")
+                event_metadata.get("eventType"),
+                event_metadata.get("eventId")
             )
             return None
-        type = event_data["eventType"]
-        id = UUID(event_data["eventId"])
-        stream = event_data["positionStreamId"]
-        sequence = event_data["positionEventNumber"]
-        return Event(id, type, data, stream, sequence)
+        return Event(
+            UUID(event_metadata["eventId"]),
+            event_metadata["eventType"],
+            event_data,
+            event_metadata["positionStreamId"],
+            event_metadata["positionEventNumber"]
+        )
 
 
 class state(Enum):
@@ -318,14 +328,14 @@ class StreamFetcher:
             jitter = random.uniform(-0.5, 0.5)
             yield last_time + jitter
 
-    def log(self, e, uri):
-        if type(e) not in self._exceptions:
+    def log(self, exception, uri):
+        if type(exception) not in self._exceptions:
             self._log.warn(
                 "Error occurred while requesting %s",
                 uri,
                 exc_info=True
             )
-            self._exceptions.add(type(e))
+            self._exceptions.add(type(exception))
 
     @asyncio.coroutine
     def sleep(self, delay):
@@ -345,16 +355,14 @@ class StreamFetcher:
         sleep_times = self.sleeps(uri)
         self._exceptions = set()
         self._state = state.green
-        for s in sleep_times:
-            headers = {"Accept": "application/json"}
-            params = {"embed": "body"}
+        for sleep_time in sleep_times:
             try:
                 response = yield from asyncio.wait_for(
                     aiohttp.request(
                         'GET',
                         uri,
-                        params=params,
-                        headers=headers,
+                        params={"embed": "body"},
+                        headers={"Accept": "application/json"},
                         loop=self._loop,
                         connector=aiohttp.TCPConnector(
                             resolve=True,
@@ -372,24 +380,26 @@ class StreamFetcher:
                     raise HttpClientError(uri, response.status)
                 if 500 <= response.status <= 599:
                     raise HttpServerError(uri, response.status)
-            except ValueError as e:
-                raise UrlError(e)
+            except ValueError as exception:
+                raise UrlError(exception)
             except (
                 aiohttp.errors.ClientError,
                 aiohttp.errors.DisconnectedError,
-                aiohttp.errors.ClientResponseError
-            ) as e:
-                self.log(e, uri)
-                yield from self.sleep(s)
-            except HttpServerError as e:
-                self.log(e, uri)
-                yield from self.sleep(s)
-            except TimeoutError as e:
-                self.log(e, uri)
-                yield from self.sleep(s)
+                aiohttp.errors.ClientResponseError,
+                HttpServerError,
+                TimeoutError
+            ) as exception:
+                self.log(exception, uri)
+                yield from self.sleep(sleep_time)
 
 
 class EventRaiser:
+    """
+    EventRaiser will simply keep consuming the non-blocking queue and feeding event to the callback
+    provided by the user.
+
+    The queue is supposed to be filled by the StreamReader.
+    """
 
     def __init__(self, queue, counter, callback, loop=None):
         self._queue = queue
@@ -405,6 +415,10 @@ class EventRaiser:
 
     @asyncio.coroutine
     def start(self):
+        """
+        This method is used to create a on-going process of consuming. It will simply wait and retry
+        when it reads all of the events.
+        """
         self._is_running = True
         while self._loop.is_running() and self._is_running:
             try:
@@ -435,6 +449,9 @@ class EventRaiser:
 
     @asyncio.coroutine
     def consume_events(self):
+        """
+        This method is used to consume the event queue once and return.
+        """
         self._is_running = True
         while self._loop.is_running() and self._is_running:
             try:
