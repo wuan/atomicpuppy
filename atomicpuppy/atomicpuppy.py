@@ -11,7 +11,7 @@ import yaml
 
 import aiohttp
 import asyncio
-from .errors import *
+from atomicpuppy.errors import FatalError,HttpClientError, HttpServerError, RejectedMessageException, UrlError
 from collections import namedtuple, defaultdict
 import pybreaker
 import random
@@ -55,28 +55,30 @@ class EventCounterCircuitBreaker(pybreaker.CircuitBreakerListener):
     def __init__(self):
         self._log = logging.getLogger(__name__)
 
-    def before_call(self, cb, func, *args, **kwargs):
-        """Called before the circuit breaker `cb` calls `func`."""
+    def before_call(self, callback, func, *args, **kwargs):
+        """Called before the circuit breaker `callback` calls `func`."""
         pass
 
-    def state_change(self, cb, old_state, new_state):
+    def state_change(self, callback, old_state, new_state):
         if new_state.name == 'open':
             self._log.error("Opening event counter circuit")
         elif new_state.name == 'closed':
             self._log.info("Event counter circuit closed")
         pass
 
-    def failure(self, cb, exc):
+    def failure(self, callback, exc):
         """Called when a function invocation raises a system error."""
         pass
 
-    def success(self, cb):
+    def success(self, callback):
         """Called when a function invocation succeeds."""
         pass
 
 
 redis_circuit = pybreaker.CircuitBreaker(
-    fail_max=20, reset_timeout=60, listeners=[
+    fail_max=20,
+    reset_timeout=60,
+    listeners=[
         EventCounterCircuitBreaker()
     ]
 )
@@ -106,7 +108,8 @@ class StreamReader:
 
     def __init__(self, queue, stream_name, loop, instance_name, subscriptions_store, timeout, nosleep=False):
         self._fetcher = StreamFetcher(
-            None, loop=loop,
+            None,
+            loop=loop,
             nosleep=nosleep,
             timeout=timeout
         )
@@ -123,24 +126,26 @@ class StreamReader:
         self._running = None
 
     @asyncio.coroutine
-    def start_consuming(self, once=False):
+    def start_consuming(self, run_once=False):
         self._running = True
         while self._running:
             try:
                 yield from self.consume()
-                if once or not self._running:
+                if run_once or not self._running:
                     break
                 yield from asyncio.sleep(5)
-            except UrlError as e:
+            except UrlError as error:
                 self.logger.exception(
                     "Failed to make a request with uri %s",
-                    e.uri)
+                    error.uri
+                )
                 self.stop()
-            except HttpClientError as e:
+            except HttpClientError as error:
                 self.logger.exception(
                     "Received bad http response with status %d from %s",
-                    e.status,
-                    e.uri)
+                    error.status,
+                    error.uri
+                )
                 self.stop()
             except asyncio.CancelledError:
                 pass
@@ -161,47 +166,48 @@ class StreamReader:
             )
             yield from self.seek_on_page(subscription.uri)
         else:
-            r = yield from self._fetcher.fetch(subscription.uri)
-            js = yield from r.json()
+            response = yield from self._fetcher.fetch(subscription.uri)
+            stream_data = yield from response.json()
 
-            last = self._get_link(js, "last")
-            if last:
+            last_read_event = self._get_link(stream_data, "last")
+            if last_read_event:
                 self.logger.debug(
                     "No last read event, skipping to last page %s",
-                    last
+                    last_read_event
                 )
-                yield from self._walk_from_last(last)
+                yield from self._walk_from_last(last_read_event)
             else:
                 self.logger.debug(
                     "No last read event, yielding events from this page %s",
                     subscription.uri
                 )
-                yield from self._raise_page_events(js)
+                yield from self._raise_page_events(stream_data)
 
     @asyncio.coroutine
     def seek_on_page(self, uri):
         self.logger.debug("Looking for last read event on page %s", uri)
-        r = yield from self._fetcher.fetch(uri)
-        js = yield from r.json()
-        yield from self.seek_to_last_read(js)
+        response = yield from self._fetcher.fetch(uri)
+        stream_data = yield from response.json()
+        yield from self.seek_to_last_read(stream_data)
 
     @asyncio.coroutine
     def _walk_from_last(self, prev_uri):
         uri = prev_uri
         while True:
             self.logger.debug("walking backwards from %s", uri)
-            r = yield from self._fetcher.fetch(uri)
-            js = yield from r.json()
-            if js["entries"]:
+            response = yield from self._fetcher.fetch(uri)
+            stream_data = yield from response.json()
+            if stream_data["entries"]:
                 self.logger.debug("raising events from page %s", uri)
-                yield from self._raise_page_events(js)
-            prev_uri = self._get_link(js, "previous")
+                yield from self._raise_page_events(stream_data)
+            prev_uri = self._get_link(stream_data, "previous")
             if not prev_uri:
                 # loop until there's a prev link, otherwise it means
                 # we are at the end or we are fetching an empty page
                 self.logger.debug(
                     "back-walk completed, new polling uri is %s",
-                    uri)
+                    uri
+                )
                 self._subscriptions.update_uri(self._stream, uri)
                 break
 
@@ -209,17 +215,17 @@ class StreamReader:
             uri = prev_uri
 
     @asyncio.coroutine
-    def _raise_page_events(self, js):
+    def _raise_page_events(self, stream_data):
         subscription = self._subscriptions.get(self._stream)
         stack = []
-        for e in js['entries']:
-            if e["positionEventNumber"] > subscription.last_read:
-                stack.append(e)
+        for entry in stream_data['entries']:
+            if entry["positionEventNumber"] > subscription.last_read:
+                stack.append(entry)
         while stack:
-            evt = self._make_event(stack.pop())
-            if evt:
-                yield from self._queue.put(evt)
-                self._subscriptions.update_sequence(self._stream, evt.sequence)
+            event = self._make_event(stack.pop())
+            if event:
+                yield from self._queue.put(event)
+                self._subscriptions.update_sequence(self._stream, event.sequence)
 
     @asyncio.coroutine
     def seek_to_last_read(self, js):
@@ -342,7 +348,8 @@ class StreamFetcher:
             try:
                 response = yield from asyncio.wait_for(
                     aiohttp.request(
-                        'GET', uri,
+                        'GET',
+                        uri,
                         params=params,
                         headers=headers,
                         loop=self._loop,
@@ -387,6 +394,7 @@ class EventRaiser:
         self._counter = counter
         self._loop = loop or asyncio.get_event_loop()
         self._logger = logging.getLogger(__name__)
+        self._is_running = None
 
     def stop(self):
         self._is_running = False
@@ -397,16 +405,16 @@ class EventRaiser:
         self._is_running = True
         while self._loop.is_running() and self._is_running:
             try:
-                msg = yield from asyncio.wait_for(
+                message = yield from asyncio.wait_for(
                     self._queue.get(),
                     timeout=1,
                     loop=self._loop
                 )
-                if not msg:
+                if not message:
                     continue
-                self._callback(msg)
+                self._callback(message)
                 try:
-                    self._counter[msg.stream] = msg.sequence
+                    self._counter[message.stream] = message.sequence
                 except pybreaker.CircuitBreakerError:
                     pass
                 except RedisError:
@@ -414,12 +422,13 @@ class EventRaiser:
             except RejectedMessageException:
                 self._logger.warn(
                     "%s message %s was rejected and has not been processed",
-                    msg.type,
-                    msg.id)
+                    message.type,
+                    message.id
+                )
             except TimeoutError:
                 pass
             except:
-                self._logger.exception("Failed to process message %s", msg)
+                self._logger.exception("Failed to process message %s", message)
 
     @asyncio.coroutine
     def consume_events(self):

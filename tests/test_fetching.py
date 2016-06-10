@@ -43,7 +43,7 @@ class StreamReaderContext:
         mock = self.http.getMock()
         with patch("aiohttp.request", new=mock):
             self._loop.run_until_complete(
-                self._reader.start_consuming(once=True)
+                self._reader.start_consuming(run_once=True)
             )
 
     def create_counter(self):
@@ -324,7 +324,7 @@ class When_the_reader_is_invoked_for_a_second_time(StreamReaderContext):
         mock = self.http.getMock()
         with patch("aiohttp.request", new=mock):
             self._loop.run_until_complete(
-                self._reader.start_consuming(once=True)
+                self._reader.start_consuming(run_once=True)
             )
 
 
@@ -401,7 +401,7 @@ class When_events_are_added_after_the_first_run(StreamReaderContext):
         mock = self.http.getMock()
         with patch("aiohttp.request", new=mock):
             self._loop.run_until_complete(
-                self._reader.start_consuming(once=True)
+                self._reader.start_consuming(run_once=True)
             )
 
     @property
