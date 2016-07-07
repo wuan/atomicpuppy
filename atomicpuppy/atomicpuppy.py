@@ -373,7 +373,7 @@ class EventRaiser:
                 self._callback(msg)
                 try:
                     self._counter[msg.stream] = msg.sequence
-                except CircuitBreakerError:
+                except pybreaker.CircuitBreakerError:
                     pass
                 except RedisError:
                     self._logger.warn("Failed to persist last read event")
@@ -400,7 +400,7 @@ class EventRaiser:
                 self._callback(msg)
                 try:
                     self._counter[msg.stream] = msg.sequence
-                except CircuitBreakerError:
+                except pybreaker.CircuitBreakerError:
                     pass
                 except RedisError:
                     self._logger.warn("Failed to persist last read event")
