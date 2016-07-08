@@ -34,4 +34,5 @@ setup(
     description='A service-activator component for eventstore',
     author='Bob Gregory',
     keywords=['eventstore'],
+    license='MIT',
 )
