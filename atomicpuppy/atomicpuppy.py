@@ -2,9 +2,18 @@ import aiohttp
 import asyncio
 import datetime
 from enum import Enum
-from .errors import *
 import json
 import logging
+import platform
+from uuid import UUID
+from concurrent.futures import TimeoutError
+
+from retrying import retry
+import yaml
+
+import aiohttp
+import asyncio
+from atomicpuppy.errors import HttpClientError, HttpServerError, RejectedMessageException, UrlError
 from collections import namedtuple, defaultdict
 import platform
 import pybreaker
@@ -375,7 +384,7 @@ class EventRaiser:
                     self._counter[msg.stream] = msg.sequence
                 except pybreaker.CircuitBreakerError:
                     pass
-                except RedisError:
+                except redis.RedisError:
                     self._logger.warn("Failed to persist last read event")
             except RejectedMessageException:
                 self._logger.warn("%s message %s was rejected and has not been processed",
@@ -402,7 +411,7 @@ class EventRaiser:
                     self._counter[msg.stream] = msg.sequence
                 except pybreaker.CircuitBreakerError:
                     pass
-                except RedisError:
+                except redis.RedisError:
                     self._logger.warn("Failed to persist last read event")
             except RejectedMessageException:
                 self._logger.warn("%s message %s was rejected and has not been processed",
