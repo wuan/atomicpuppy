@@ -1,9 +1,9 @@
+from uuid import uuid4
 import asyncio
+
 from atomicpuppy import EventRaiser, RejectedMessageException
 from atomicpuppy.atomicpuppy import Event
-from .fakehttp import SpyLog
-from concurrent.futures import TimeoutError
-from uuid import uuid4
+from tests.fakehttp import SpyLog
 
 
 class When_an_event_is_processed:
@@ -19,10 +19,12 @@ class When_an_event_is_processed:
         self.message_id = uuid4()
 
         self.queue = asyncio.Queue(loop=self._loop)
-        self.message_processor = EventRaiser(self.queue,
-                                                  self.event_recorder,
-                                                  lambda e: self.process_message(e),
-                                                  self._loop)
+        self.message_processor = EventRaiser(
+            self.queue,
+            self.event_recorder,
+            lambda e: self.process_message(e),
+            self._loop,
+        )
 
     def because_we_add_a_message(self):
         msg = Event(self.message_id, "type", {}, "stream", self.sequence_no)
@@ -57,10 +59,12 @@ class When_an_event_is_processed_by_running_once:
         self.message_id = uuid4()
 
         self.queue = asyncio.Queue(loop=self._loop)
-        self.message_processor = EventRaiser(self.queue,
-                                                  self.event_recorder,
-                                                  lambda e: self.process_message(e),
-                                                  self._loop)
+        self.message_processor = EventRaiser(
+            self.queue,
+            self.event_recorder,
+            lambda e: self.process_message(e),
+            self._loop,
+        )
 
     def because_we_add_a_message(self):
         msg = Event(self.message_id, "type", {}, "stream", self.sequence_no)
@@ -79,7 +83,6 @@ class When_an_event_is_processed_by_running_once:
 
     def process_message(self, e):
         self.the_message = e
-
 
 
 class When_a_message_is_rejected:
@@ -155,5 +158,3 @@ class When_a_message_raises_an_unhandled_exception:
     @asyncio.coroutine
     def send_message(self, e):
         yield from self.queue.put(e)
-
-

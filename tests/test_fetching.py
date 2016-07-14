@@ -1,18 +1,22 @@
-import aiohttp
+from unittest.mock import patch
+from uuid import UUID, uuid4
 import asyncio
 import datetime
 import logging
 import os
-from unittest.mock import patch
-from uuid import UUID, uuid4
 
 import fakeredis
+import aiohttp
 from freezegun import freeze_time
 
 from atomicpuppy.atomicpuppy import (
-    StreamReader, SubscriptionInfoStore, SubscriptionConfig, RedisCounter
+    StreamReader,
+    SubscriptionInfoStore,
+    SubscriptionConfig,
+    RedisCounter,
 )
-from .fakehttp import FakeHttp, SpyLog
+from tests.fakehttp import FakeHttp, SpyLog
+
 
 SCRIPT_PATH = os.path.dirname(__file__)
 
@@ -25,7 +29,10 @@ class StreamReaderContext:
     _port = 2113
 
     def __init__(self):
-        self.counter = RedisCounter(fakeredis.FakeStrictRedis(), "test-instace-{}".format(uuid4()))
+        self.counter = RedisCounter(
+            fakeredis.FakeStrictRedis(),
+            "test-instace-{}".format(uuid4()),
+        )
 
     def given_an_event_loop(self):
         logging.basicConfig(filename='example.log', level=logging.DEBUG)
@@ -126,11 +133,12 @@ class When_an_event_contains_no_data(StreamReaderContext):
         assert(self._queue.empty())
 
     def it_should_log_a_warning(self):
-        for r in self._log._logs:
-            print(r.msg)
-        assert(any(r.msg.startswith("No `data` key found on event")
-                   and r.levelno == logging.WARNING
-                   for r in self._log._logs))
+        assert(
+            any(
+                r.msg.startswith("No `data` key found on event") and r.levelno == logging.WARNING for r in self._log._logs,
+            ),
+        )
+
 
 class When_a_feed_contains_multiple_events(StreamReaderContext):
 
@@ -165,11 +173,14 @@ class When_a_last_read_event_is_specified(StreamReaderContext):
     _the_events = []
 
     def given_a_feed_containing_three_events(self):
-        self.http.registerJsonUri('http://eventstore.local:2113/streams/foo/1/forward/20',
-                                  SCRIPT_PATH + '/responses/three-events.json')
+        self.http.registerJsonUri(
+            'http://eventstore.local:2113/streams/foo/1/forward/20',
+            SCRIPT_PATH + '/responses/three-events.json',
+        )
         self.http.registerJsonUri(
             'http://127.0.0.1:2113/streams/newstream2/3/forward/20',
-            SCRIPT_PATH + '/responses/two-page/head_next_prev_prev.json')
+            SCRIPT_PATH + '/responses/two-page/head_next_prev_prev.json',
+        )
 
     def because_we_start_the_reader(self):
         self.subscribe_and_run('foo', last_read=1)
@@ -189,54 +200,6 @@ class When_a_last_read_event_is_specified(StreamReaderContext):
         return self._the_events
 
 
-# For some reason (ie. because I deleted things), my stock feed got a bit messed up
-# but that gives us a useful test case if nowt else
-# class When_a_feed_spans_several_pages(StreamReaderContext):
-
-#     _the_events = []
-
-#     def given_a_feed_spanning_two_pages(self):
-#         self._host = "127.0.0.1"
-
-#         # all the pages except the first and last in this list are empty.
-#         self.http.registerJsonUris(
-#             {
-#                 'http://127.0.0.1:2113/streams/stock':
-#                     SCRIPT_PATH + '/responses/two-page/head.json',
-#                 'http://127.0.0.1:2113/streams/stock/0/forward/20':
-#                     SCRIPT_PATH + '/responses/two-page/head_last.json',
-#                  'http://127.0.0.1:2113/streams/stock/20/forward/20':
-#                     SCRIPT_PATH + '/responses/two-page/head_last_prev.json',
-#                  'http://127.0.0.1:2113/streams/stock/40/forward/20':
-#                     SCRIPT_PATH + '/responses/two-page/head_last_prev_prev.json',
-#                  'http://127.0.0.1:2113/streams/stock/60/forward/20':
-#                     SCRIPT_PATH + '/responses/two-page/head_last_prev_prev_prev.json',
-#                  'http://127.0.0.1:2113/streams/stock/80/forward/20':
-#                     SCRIPT_PATH + '/responses/two-page/head_last_prev_prev_prev_prev.json',
-#                  'http://127.0.0.1:2113/streams/stock/84/forward/20':
-#                     SCRIPT_PATH + '/responses/two-page/head_last_prev_prev_prev_prev_prev.json',
-#             }
-#         )
-
-#     def because_we_start_the_reader(self):
-#         self.subscribe_and_run('stock')
-
-#     def we_should_raise_all_the_events(self):
-#         assert(len(self.the_events) == 22)
-
-#     def we_should_raise_the_events_in_the_correct_order(self):
-#         assert(self.the_events[0].sequence == 62)
-#         assert(self.the_events[21].sequence == 83)
-
-#     @property
-#     def the_events(self):
-#         if(not self._the_events):
-#             while(not self._queue.empty()):
-#                 self._the_events.append(self._queue.get_nowait())
-
-#         return self._the_events
-
-
 class When_the_last_read_event_is_on_the_first_page(StreamReaderContext):
 
     _the_events = []
@@ -249,9 +212,7 @@ class When_the_last_read_event_is_on_the_first_page(StreamReaderContext):
             SCRIPT_PATH + '/responses/two-page/head.json',
             'http://127.0.0.1:2113/streams/stock/84/forward/20':
             SCRIPT_PATH + '/responses/two-page/head_next_prev_prev.json',
-
-
-            })
+        })
 
     def because_we_start_the_reader(self):
         self.subscribe_and_run('stock', last_read=80)
@@ -285,16 +246,20 @@ class When_the_reader_is_invoked_for_a_second_time(StreamReaderContext):
     def given_a_reader_that_has_read_all_the_events(self):
         self.http.registerJsonUri(
             'http://eventstore.local:2113/streams/newstream/0/forward/20',
-            SCRIPT_PATH + '/responses/single-event.json')
+            SCRIPT_PATH + '/responses/single-event.json',
+        )
         self.http.registerJsonUri(
             'http://127.0.0.1:2113/streams/newstream/1/forward/20',
-            SCRIPT_PATH + '/responses/empty.json')
+            SCRIPT_PATH + '/responses/empty.json',
+        )
         self.http.registerJsonUri(
             'http://eventstore.local:2113/streams/newstream/0/forward/20',
-            SCRIPT_PATH + '/responses/single-event.json')
+            SCRIPT_PATH + '/responses/single-event.json',
+        )
         self.http.registerJsonUri(
             'http://127.0.0.1:2113/streams/newstream/1/forward/20',
-            SCRIPT_PATH + '/responses/empty.json')
+            SCRIPT_PATH + '/responses/empty.json',
+        )
 
         self._reader = self.subscribeTo('newstream', -1)
         self.run_the_reader()
@@ -310,7 +275,7 @@ class When_the_reader_is_invoked_for_a_second_time(StreamReaderContext):
         mock = self.http.getMock()
         with patch("aiohttp.request", new=mock):
             self._loop.run_until_complete(
-                self._reader.start_consuming(once=True)
+                self._reader.start_consuming(once=True),
             )
 
 
@@ -333,31 +298,43 @@ class When_events_are_added_after_the_first_run(StreamReaderContext):
 
     def given_a_changing_feed(self):
         # When we first hit the stream, it returns a single event
-        self.http.registerJsonUri('http://eventstore.local:2113/streams/stock/0/forward/20',
-                                  SCRIPT_PATH + '/responses/new-events/head.json')
+        self.http.registerJsonUri(
+            'http://eventstore.local:2113/streams/stock/0/forward/20',
+            SCRIPT_PATH + '/responses/new-events/head.json',
+        )
 
-        self.http.registerJsonUri('http://eventstore.local:2113/streams/stock/0/forward/20',
-                                  SCRIPT_PATH + '/responses/new-events/head.json')
+        self.http.registerJsonUri(
+            'http://eventstore.local:2113/streams/stock/0/forward/20',
+            SCRIPT_PATH + '/responses/new-events/head.json',
+        )
 
-        self.http.registerJsonUri('http://eventstore.local:2113/streams/stock/0/forward/20',
-                                  SCRIPT_PATH + '/responses/new-events/head.json')
+        self.http.registerJsonUri(
+            'http://eventstore.local:2113/streams/stock/0/forward/20',
+            SCRIPT_PATH + '/responses/new-events/head.json',
+        )
 
         # On the second invocation, we receive no new events
         # On the third invocation, we receive two pages of two events each
         self.http.registerJsonsUri(
             'http://127.0.0.1:2113/streams/stock/85/forward/20',
-            [SCRIPT_PATH + '/responses/new-events/head_prev.json',
-             SCRIPT_PATH + '/responses/new-events/head_prev2.json',
-             SCRIPT_PATH + '/responses/new-events/head_prev2.json', ])
+            [
+                SCRIPT_PATH + '/responses/new-events/head_prev.json',
+                SCRIPT_PATH + '/responses/new-events/head_prev2.json',
+                SCRIPT_PATH + '/responses/new-events/head_prev2.json',
+            ],
+        )
         self.http.registerJsonUri(
             'http://127.0.0.1:2113/streams/stock/84/backward/20',
-            SCRIPT_PATH + '/responses/new-events/head_prev2_next.json')
+            SCRIPT_PATH + '/responses/new-events/head_prev2_next.json',
+        )
         self.http.registerJsonUri(
             'http://127.0.0.1:2113/streams/stock/105/forward/20',
-            SCRIPT_PATH + '/responses/new-events/head_prev2_next_prev.json')
+            SCRIPT_PATH + '/responses/new-events/head_prev2_next_prev.json',
+        )
         self.http.registerJsonUri(
             'http://127.0.0.1:2113/streams/stock/108/forward/20',
-            SCRIPT_PATH + '/responses/new-events/head_prev2_next_prev_prev.json')
+            SCRIPT_PATH + '/responses/new-events/head_prev2_next_prev_prev.json',
+        )
 
     def because_we_run_the_reader_three_times(self):
         self._reader = self.subscribeTo('stock', -1)
@@ -405,7 +382,7 @@ class When_reading_from_a_category_projection(StreamReaderContext):
     def given_a_category_projection_stream(self):
         self.http.registerJsonUri(
             'http://eventstore.local:2113/streams/$ce-order/0/forward/20',
-            SCRIPT_PATH + '/responses/category-projection/head.json'
+            SCRIPT_PATH + '/responses/category-projection/head.json',
         )
 
     def because_we_run_the_reader(self):
@@ -466,7 +443,7 @@ class When_a_client_error_occurs_during_fetch(StreamReaderContext):
             'http://eventstore.local:2113/streams/newstream/0/forward/20',
             [
                 lambda: exec('raise aiohttp.errors.ClientOSError("Darn it, can\'t connect")'),
-                lambda: exec('raise ValueError()')
+                lambda: exec('raise ValueError()'),
             ]
         )
 
@@ -480,11 +457,7 @@ class When_a_client_error_occurs_during_fetch(StreamReaderContext):
                 )
 
     def it_should_log_a_warning(self):
-        for r in self._log._logs:
-            print(r.msg)
-        assert(any(r.msg == "Error occurred while requesting %s"
-                   and r.levelno == logging.WARNING
-                   for r in self._log._logs))
+        _assert_log("Error occurred while requesting %s", logging.WARNING, self._log._logs)
 
 
 class When_multiple_errors_of_the_same_type_occur(StreamReaderContext):
@@ -497,7 +470,7 @@ class When_multiple_errors_of_the_same_type_occur(StreamReaderContext):
             [
                 lambda: exec('raise aiohttp.errors.ClientOSError("Darn it, can\'t connect")'),
                 lambda: exec('raise aiohttp.errors.ClientOSError("Darn it, can\'t connect")'),
-                lambda: exec('raise ValueError()')
+                lambda: exec('raise ValueError()'),
             ]
         )
 
@@ -531,7 +504,7 @@ class When_a_disconnection_error_occurs_during_fetch(StreamReaderContext):
             'http://eventstore.local:2113/streams/newstream/0/forward/20',
             [
                 lambda: exec('raise aiohttp.errors.DisconnectedError("Darn it, can\'t connect")'),
-                lambda: exec('raise ValueError()')
+                lambda: exec('raise ValueError()'),
             ]
         )
 
@@ -545,9 +518,7 @@ class When_a_disconnection_error_occurs_during_fetch(StreamReaderContext):
                 )
 
     def it_should_log_a_warning(self):
-        assert(any(r.msg == "Error occurred while requesting %s"
-                   and r.levelno == logging.WARNING
-                   for r in self._log._logs))
+        _assert_log("Error occurred while requesting %s", logging.WARNING, self._log._logs)
 
 
 class When_a_timeout_error_occurs_during_fetch(StreamReaderContext):
@@ -564,7 +535,7 @@ class When_a_timeout_error_occurs_during_fetch(StreamReaderContext):
             'http://eventstore.local:2113/streams/newstream/0/forward/20',
             [
                 lambda: exec('raise aiohttp.errors.TimeoutError()'),
-                lambda: exec('raise ValueError()')
+                lambda: exec('raise ValueError()'),
             ]
         )
 
@@ -578,9 +549,7 @@ class When_a_timeout_error_occurs_during_fetch(StreamReaderContext):
                 )
 
     def it_should_log_a_warning(self):
-        assert(any(r.msg == "Error occurred while requesting %s"
-                   and r.levelno == logging.WARNING
-                   for r in self._log._logs))
+        _assert_log("Error occurred while requesting %s", logging.WARNING, self._log._logs)
 
 
 """
@@ -598,7 +567,7 @@ class When_a_client_response_error_occurs_during_fetch(StreamReaderContext):
             'http://eventstore.local:2113/streams/newstream/0/forward/20',
             [
                 lambda: exec('raise aiohttp.errors.ClientResponseError("Darn it, something went bad")'),
-                lambda: exec('raise ValueError()')
+                lambda: exec('raise ValueError()'),
             ]
         )
 
@@ -608,13 +577,11 @@ class When_a_client_response_error_occurs_during_fetch(StreamReaderContext):
             mock = self.http.getMock()
             with patch("aiohttp.request", new=mock):
                 self._loop.run_until_complete(
-                    self._reader.start_consuming()
+                    self._reader.start_consuming(),
                 )
 
     def it_should_log_a_warning(self):
-        assert(any(r.msg == "Error occurred while requesting %s"
-                   and r.levelno == logging.WARNING
-                   for r in self._log._logs))
+        _assert_log("Error occurred while requesting %s", logging.WARNING, self._log._logs)
 
 
 """
@@ -636,15 +603,10 @@ class When_we_receive_a_4xx_range_error(StreamReaderContext):
         with(self._log.capture()):
             mock = self.http.getMock()
             with patch("aiohttp.request", new=mock):
-                self._loop.run_until_complete(
-                    self._reader.start_consuming()
-                )
+                self._loop.run_until_complete(self._reader.start_consuming())
 
     def it_should_log_an_error(self):
-        assert(
-            any(r.msg == "Received bad http response with status %d from %s"
-                and r.levelno == logging.ERROR
-                for r in self._log._logs))
+        _assert_log("Received bad http response with status %d from %s", logging.ERROR, self._log._logs)
 
 
 class When_we_receive_a_404_range_error(StreamReaderContext):
@@ -653,10 +615,12 @@ class When_we_receive_a_404_range_error(StreamReaderContext):
 
     def given_a_404(self):
         self.http.registerEmptyUri(
-            'http://eventstore.local:2113/streams/newstream/0/forward/20', 404)
+            'http://eventstore.local:2113/streams/newstream/0/forward/20', 404,
+        )
         self.http.registerCallbackUri(
-                'http://eventstore.local:2113/streams/newstream/0/forward/20',
-                lambda: exec('raise ValueError()'))
+            'http://eventstore.local:2113/streams/newstream/0/forward/20',
+            lambda: exec('raise ValueError()'),
+        )
 
     def because_we_fetch_the_stream(self):
         self._reader = self.subscribeTo("newstream", -1, nosleep=True)
@@ -668,10 +632,7 @@ class When_we_receive_a_404_range_error(StreamReaderContext):
                 )
 
     def it_should_log_a_single_warning(self):
-        assert(
-            any(r.msg == "Error occurred while requesting %s"
-                and r.levelno == logging.WARNING
-                for r in self._log._logs))
+        _assert_log("Error occurred while requesting %s", logging.WARNING, self._log._logs)
 
 
 class When_we_receive_a_408_range_error(StreamReaderContext):
@@ -680,25 +641,22 @@ class When_we_receive_a_408_range_error(StreamReaderContext):
 
     def given_a_408(self):
         self.http.registerEmptyUri(
-            'http://eventstore.local:2113/streams/newstream/0/forward/20', 408)
+            'http://eventstore.local:2113/streams/newstream/0/forward/20', 408,
+        )
         self.http.registerCallbackUri(
-                'http://eventstore.local:2113/streams/newstream/0/forward/20',
-                lambda: exec('raise ValueError()'))
+            'http://eventstore.local:2113/streams/newstream/0/forward/20',
+            lambda: exec('raise ValueError()'),
+        )
 
     def because_we_fetch_the_stream(self):
         self._reader = self.subscribeTo("newstream", -1, nosleep=True)
         with(self._log.capture()):
             mock = self.http.getMock()
             with patch("aiohttp.request", new=mock):
-                self._loop.run_until_complete(
-                    self._reader.start_consuming()
-                )
+                self._loop.run_until_complete(self._reader.start_consuming())
 
     def it_should_log_a_single_warning(self):
-        assert(
-            any(r.msg == "Error occurred while requesting %s"
-                and r.levelno == logging.WARNING
-                for r in self._log._logs))
+        _assert_log("Error occurred while requesting %s", logging.WARNING, self._log._logs)
 
 
 """
@@ -715,8 +673,9 @@ class When_we_receive_a_50x_range_error(StreamReaderContext):
         self.http.registerEmptyUri(
                 'http://eventstore.local:2113/streams/newstream/0/forward/20', 500)
         self.http.registerCallbackUri(
-                'http://eventstore.local:2113/streams/newstream/0/forward/20',
-                lambda: exec('raise ValueError()'))
+            'http://eventstore.local:2113/streams/newstream/0/forward/20',
+            lambda: exec('raise ValueError()'),
+        )
 
     def because_we_fetch_the_stream(self):
         self._reader = self.subscribeTo("newstream", -1, nosleep=True)
@@ -728,10 +687,7 @@ class When_we_receive_a_50x_range_error(StreamReaderContext):
                 )
 
     def it_should_log_a_single_warning(self):
-        assert(
-            any(r.msg == "Error occurred while requesting %s"
-                and r.levelno == logging.WARNING
-                for r in self._log._logs))
+        _assert_log("Error occurred while requesting %s", logging.WARNING, self._log._logs)
 
 
 class When_an_event_has_bad_json(StreamReaderContext):
@@ -748,10 +704,19 @@ class When_an_event_has_bad_json(StreamReaderContext):
             self.subscribe_and_run('newstream')
 
     def it_should_log_an_error(self):
-        assert(any(
-            r.msg == "Failed to parse json data for %s message %s"
-            and r.levelno == logging.ERROR
-            for r in self._log._logs))
+        assert(
+            any(
+                r.msg == "Failed to parse json data for %s message %s" and r.levelno == logging.ERROR for r in self._log._logs,
+            )
+        )
+        _assert_log("Failed to parse json data for %s message %s", logging.ERROR, self._log._logs)
+
+
+def _assert_log(expected_msg, expected_log_level, logs):
+    was_logged = any(
+        r.msg == expected_msg and r.levelno == expected_log_level for r in logs
+    )
+    assert was_logged
 
 
 class When_reading_from_a_stream_with_a_dynamic_date(StreamReaderContext):
@@ -766,16 +731,15 @@ class When_reading_from_a_stream_with_a_dynamic_date(StreamReaderContext):
 
     def given_a_feed_for_today_containing_one_event(self):
         self.http.registerJsonUri(
-            'http://eventstore.local:2113/streams/sotd_{}/0/forward/20'.format(
-                datetime.date.today().isoformat()),
-            '{}/responses/single-event.json'.format(SCRIPT_PATH))
+            'http://eventstore.local:2113/streams/sotd_{}/0/forward/20'.format(datetime.date.today().isoformat()),
+            '{}/responses/single-event.json'.format(SCRIPT_PATH),
+        )
 
     def because_we_start_the_reader(self):
         self.subscribe_and_run('sotd_#date#')
 
     def it_should_have_the_event_coming_from_the_stream_for_today(self):
-        assert(
-            self.the_event.id == UUID('fbf4a1a1-b4a3-4dfe-a01f-ec52c34e16e4'))
+        assert self.the_event.id == UUID('fbf4a1a1-b4a3-4dfe-a01f-ec52c34e16e4')
 
 
 class When_reading_from_a_stream_with_a_dynamic_date_twice_across_dates(StreamReaderContext):
@@ -783,10 +747,12 @@ class When_reading_from_a_stream_with_a_dynamic_date_twice_across_dates(StreamRe
     def given_a_dynamic_subscription(self):
         self.http.registerJsonUri(
             'http://eventstore.local:2113/streams/sotd_2015-08-27/0/forward/20',
-            '{}/responses/first_date_response.json'.format(SCRIPT_PATH))
+            '{}/responses/first_date_response.json'.format(SCRIPT_PATH),
+        )
         self.http.registerJsonUri(
             'http://eventstore.local:2113/streams/sotd_2015-08-28/0/forward/20',
-            '{}/responses/second_date_response.json'.format(SCRIPT_PATH))
+            '{}/responses/second_date_response.json'.format(SCRIPT_PATH),
+        )
 
         self.subscribeTo("sotd_#date#", -1, nosleep=True)
 
@@ -801,9 +767,7 @@ class When_reading_from_a_stream_with_a_dynamic_date_twice_across_dates(StreamRe
         self._second_event = self._queue.get_nowait()
 
     def it_should_have_the_event_coming_from_the_stream_for_the_first_date(self):
-        assert(
-            self._first_event.id == UUID('a51be208-25e5-41b8-a598-ec299a20ef96'))
+        assert self._first_event.id == UUID('a51be208-25e5-41b8-a598-ec299a20ef96')
 
     def it_should_have_the_event_coming_from_the_stream_for_the_second_date(self):
-        assert(
-            self._second_event.id == UUID('fbf4a1a1-b4a3-4dfe-a01f-ec52c34e16e4'))
+        assert self._second_event.id == UUID('fbf4a1a1-b4a3-4dfe-a01f-ec52c34e16e4')

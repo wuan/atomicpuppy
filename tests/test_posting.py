@@ -2,7 +2,7 @@ from uuid import uuid4
 
 import httpretty
 
-from atomicpuppy import Event, EventPublisher
+from atomicpuppy.events import Event, EventPublisher
 
 
 class When_a_message_is_posted:

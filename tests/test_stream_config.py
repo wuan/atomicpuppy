@@ -1,6 +1,7 @@
 import io
-from atomicpuppy.atomicpuppy import *
+
 from atomicpuppy.atomicpuppy import make_subscription_config
+from atomicpuppy.events import EventCounter, RedisCounter
 import platform
 
 

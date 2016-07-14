@@ -1,13 +1,10 @@
-from .atomicpuppy import (
+from atomicpuppy.atomicpuppy import (
     StreamReader,
     make_subscription_config,
-    EventRaiser,
-    Event,
-    EventPublisher,
-    EventStoreJsonEncoder,
     SubscriptionInfoStore
 )
-from .errors import *
+from atomicpuppy.events import EventRaiser
+from atomicpuppy.errors import *
 
 import asyncio
 
