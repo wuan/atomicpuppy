@@ -1,8 +1,6 @@
 import fakeredis
-from unittest.mock import Mock
 from atomicpuppy.atomicpuppy import RedisCounter
-from .fakehttp import SpyLog
-from redis import TimeoutError
+
 
 class When_redis_contains_no_information_for_a_stream:
 
@@ -43,3 +41,4 @@ class When_setting_the_last_read_value:
 
     def cleanup_redis(self):
         self.redis.flushall()
+

@@ -1,6 +1,6 @@
 from .atomicpuppy import (
     StreamReader,
-    StreamConfigReader,
+    make_subscription_config,
     EventRaiser,
     Event,
     EventPublisher,
@@ -16,9 +16,8 @@ class AtomicPuppy:
 
     running = False
 
-    def __init__(self, cfg_file, callback, loop=None):
-        self.config = StreamConfigReader().read(cfg_file)
-
+    def __init__(self, cfg_file, callback, loop=None, counter=None):
+        self.config = make_subscription_config(cfg_file, counter=counter)
 
         self.callback = callback
         self._loop = loop or asyncio.get_event_loop()

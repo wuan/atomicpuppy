@@ -1,5 +1,6 @@
 import io
 from atomicpuppy.atomicpuppy import *
+from atomicpuppy.atomicpuppy import make_subscription_config
 import platform
 
 
@@ -23,9 +24,8 @@ class When_reading_a_config_file:
                 """)
 
     def because_we_read_the_file(self):
-        self.reader = StreamConfigReader()
         with self._file as f:
-            self.result = self.reader.read(f)
+            self.result = make_subscription_config(f)
 
     def it_should_contain_four_streams(self):
         assert(len(self.result.streams) == 4)
@@ -59,9 +59,8 @@ class When_the_host_is_not_specified:
                 """)
 
     def because_we_read_the_file(self):
-        self.reader = StreamConfigReader()
         with self._file as f:
-            self.result = self.reader.read(f)
+            self.result = make_subscription_config(f)
 
     def it_should_contain_three_streams(self):
         assert(len(self.result.streams) == 3)
@@ -85,9 +84,8 @@ class When_the_port_is_not_specified:
                 """)
 
     def because_we_read_the_file(self):
-        self.reader = StreamConfigReader()
         with self._file as f:
-            self.result = self.reader.read(f)
+            self.result = make_subscription_config(f)
 
     def it_should_contain_three_streams(self):
         assert(len(self.result.streams) == 3)
@@ -109,9 +107,8 @@ class When_the_instance_name_is_not_specified:
                 """)
 
     def because_we_read_the_file(self):
-        self.reader = StreamConfigReader()
         with self._file as f:
-            self.result = self.reader.read(f)
+            self.result = make_subscription_config(f)
 
     def it_should_default_to_the_hostname(self):
         assert(self.result.instance_name == platform.node())
@@ -135,10 +132,69 @@ class When_the_config_specifies_a_redis_counter:
                 """)
 
     def because_we_read_the_file(self):
-        self.reader = StreamConfigReader()
         with self._file as f:
-            result = self.reader.read(f)
+            result = make_subscription_config(f)
         self.ctr = result.counter_factory()
 
     def it_should_return_a_redis_counter(self):
         assert(isinstance(self.ctr, RedisCounter))
+
+
+class CustomCounter(EventCounter):
+
+    def __init__(self):
+        self._counter = {}
+
+    def __getitem__(self, stream):
+        return self._counter.get(stream, -1)
+
+    def __setitem__(self, stream, val):
+        self._counter[stream] = val
+
+
+class When_we_pass_a_custom_counter_without_counter_config:
+
+    def given_a_config_file(self):
+        self._file = io.BytesIO(b"""
+                atomicpuppy:
+                    host: eventstore.local
+                    port: 999
+                    streams:
+                        - foo
+                        - bar
+                        - baz
+                """)
+
+    def because_we_read_the_file(self):
+        with self._file as f:
+            result = make_subscription_config(f, CustomCounter())
+        self.ctr = result.counter_factory()
+
+    def it_should_return_a_redis_counter(self):
+        assert(isinstance(self.ctr, CustomCounter))
+
+
+class When_we_pass_a_custom_counter_with_counter_config:
+
+    def given_a_config_file(self):
+        self._file = io.BytesIO(b"""
+                atomicpuppy:
+                    host: eventstore.local
+                    port: 999
+                    streams:
+                        - foo
+                        - bar
+                        - baz
+                    counter:
+                        redis:
+                            host: localhost
+                            port: 1234
+                """)
+
+    def because_we_read_the_file(self):
+        with self._file as f:
+            result = make_subscription_config(f, CustomCounter())
+        self.ctr = result.counter_factory()
+
+    def it_should_return_a_redis_counter(self):
+        assert(isinstance(self.ctr, CustomCounter))

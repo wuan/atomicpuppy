@@ -11,26 +11,29 @@ from concurrent.futures import TimeoutError
 from retrying import retry
 import yaml
 
-import aiohttp
-import asyncio
-from atomicpuppy.errors import HttpClientError, HttpServerError, RejectedMessageException, UrlError
+from atomicpuppy.errors import (
+    HttpClientError,
+    HttpServerError,
+    RejectedMessageException,
+    UrlError,
+)
 from collections import namedtuple, defaultdict
-import platform
 import pybreaker
-from retrying import retry
 import random
 import redis
 import requests
-from uuid import UUID
-import yaml
-from concurrent.futures import TimeoutError
 
-SubscriptionConfig = namedtuple('SubscriptionConfig', ['streams',
-                                                       'counter_factory',
-                                                       'instance_name',
-                                                       'host',
-                                                       'port',
-                                                       'timeout'])
+
+SubscriptionConfig = namedtuple(
+    'SubscriptionConfig', [
+        'streams',
+        'counter_factory',
+        'instance_name',
+        'host',
+        'port',
+        'timeout',
+    ],
+)
 
 
 class Event:
@@ -462,43 +465,45 @@ class RedisCounter(EventCounter):
         return "urn:atomicpuppy:"+self._instance_name+":"+stream+":position"
 
 
-class StreamConfigReader:
+def make_subscription_config(config_file, counter_instance=None):
+    if isinstance(config_file, dict):
+        cfg = config_file.get('atomicpuppy')
+    elif isinstance(config_file, str):
+        with open(config_file) as file:
+            cfg = yaml.load(file).get('atomicpuppy')
+    else:
+        cfg = yaml.load(config_file).get('atomicpuppy')
 
-    def __init__(self):
-        pass
+    streams = []
+    instance = cfg.get('instance') or platform.node()
+    for stream in cfg.get("streams"):
+        streams.append(stream)
+    ctr = _make_counter(cfg, instance, counter_instance)
+    return SubscriptionConfig(
+        streams=streams,
+        counter_factory=ctr,
+        instance_name=instance,
+        host=cfg.get("host") or 'localhost',
+        port=cfg.get("port") or 2113,
+        timeout=cfg.get("timeout") or 20,
+    )
 
-    def read(self, config_file):
-        cfg = None
-        if isinstance(config_file, dict):
-            cfg = config_file.get('atomicpuppy')
-        elif isinstance(config_file, str):
-            with open(config_file) as file:
-                cfg = yaml.load(file).get('atomicpuppy')
-        else:
-            cfg = yaml.load(config_file).get('atomicpuppy')
 
+def _make_counter(cfg, instance, counter_instance=None):
+    if counter_instance:
+        return lambda: counter_instance
 
-        streams = []
-        instance = cfg.get('instance') or platform.node()
-        for stream in cfg.get("streams"):
-            streams.append(stream)
-        ctr = self._make_counter(cfg, instance)
-        return SubscriptionConfig(streams=streams,
-                                  counter_factory=ctr,
-                                  instance_name=instance,
-                                  host=cfg.get("host") or 'localhost',
-                                  port=cfg.get("port") or 2113,
-                                  timeout=cfg.get("timeout") or 20)
-
-    def _make_counter(self, cfg, instance):
-        ctr = cfg.get('counter')
-        if(not ctr):
-            return (lambda: defaultdict(lambda: -1))
-        if(ctr["redis"]):
-            return lambda: RedisCounter(
-                redis.StrictRedis(port=ctr["redis"].get("port"),
-                                  host=ctr["redis"].get("host")),
-                instance)
+    ctr = cfg.get('counter')
+    if(not ctr):
+        return (lambda: defaultdict(lambda: -1))
+    if(ctr["redis"]):
+        return lambda: RedisCounter(
+            redis.StrictRedis(
+                port=ctr["redis"].get("port"),
+                host=ctr["redis"].get("host"),
+            ),
+            instance,
+        )
 
 
 class SubscriptionInfoStore:
