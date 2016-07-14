@@ -1,10 +1,6 @@
-from atomicpuppy.atomicpuppy import (
-    StreamReader,
-    make_subscription_config,
-    SubscriptionInfoStore
-)
 from atomicpuppy.events import EventRaiser
-from atomicpuppy.errors import *
+from atomicpuppy.streams import StreamReader
+from atomicpuppy.subscriptions import make_subscription_config, SubscriptionInfoStore
 
 import asyncio
 
@@ -22,10 +18,7 @@ class AtomicPuppy:
 
     def start(self, run_once=False):
         c = self.counter = self.config.counter_factory()
-        self._messageProcessor = EventRaiser(self._queue,
-                                             c,
-                                             self.callback,
-                                             self._loop)
+        self._messageProcessor = EventRaiser(self._queue, c, self.callback, self._loop)
         subscription_info_store = SubscriptionInfoStore(self.config, c)
         self.readers = [
             StreamReader(
@@ -34,7 +27,8 @@ class AtomicPuppy:
                 loop=self._loop,
                 instance_name=self.config.instance_name,
                 subscriptions_store=subscription_info_store,
-                timeout=self.config.timeout)
+                timeout=self.config.timeout,
+            )
             for s in self.config.streams
         ]
         self.tasks = [s.start_consuming(once=run_once) for s in self.readers]

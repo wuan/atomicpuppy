@@ -9,8 +9,8 @@ import fakeredis
 import aiohttp
 from freezegun import freeze_time
 
-from atomicpuppy.atomicpuppy import (
-    StreamReader,
+from atomicpuppy.streams import StreamReader
+from atomicpuppy.subscriptions import (
     SubscriptionInfoStore,
     SubscriptionConfig,
     RedisCounter,

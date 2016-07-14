@@ -1,8 +1,8 @@
 from uuid import uuid4
 import asyncio
 
-from atomicpuppy import EventRaiser, RejectedMessageException
-from atomicpuppy.atomicpuppy import Event
+from atomicpuppy.errors import RejectedMessageException
+from atomicpuppy.events import Event, EventRaiser
 from tests.fakehttp import SpyLog
 
 

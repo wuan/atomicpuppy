@@ -1,5 +1,5 @@
 import fakeredis
-from atomicpuppy.atomicpuppy import RedisCounter
+from atomicpuppy.subscriptions import RedisCounter
 
 
 class When_redis_contains_no_information_for_a_stream:
