@@ -2,12 +2,14 @@ import fakeredis
 from unittest.mock import Mock
 from atomicpuppy.atomicpuppy import RedisCounter
 from .fakehttp import SpyLog
+from .fakes import FakeRedisCounter
 from redis import TimeoutError
+
 
 class When_redis_contains_no_information_for_a_stream:
 
     def given_an_empty_redis_counter(self):
-        self.counter = RedisCounter(fakeredis.FakeStrictRedis(), instance="fred")
+        self.counter = FakeRedisCounter(instance="fred")
 
     def it_should_return_negative_one(self):
         assert(self.counter["my-stream"] == -1)
@@ -22,7 +24,7 @@ class When_redis_contains_a_last_read_value_for_a_stream:
         self.redis.set('urn:atomicpuppy:fred:my-stream:position', self.last_read)
 
     def it_should_return_the_last_read_value(self):
-        ctr = RedisCounter(self.redis, instance="fred")
+        ctr = FakeRedisCounter(instance="fred")
         assert(ctr["my-stream"] == self.last_read)
 
     def cleanup_redis(self):
@@ -33,7 +35,7 @@ class When_setting_the_last_read_value:
 
     def given_an_empty_redis_instance(self):
         self.redis = fakeredis.FakeStrictRedis()
-        self.ctr = RedisCounter(self.redis, "instance")
+        self.ctr = FakeRedisCounter("instance")
 
     def because_we_record_an_event(self):
         self.ctr["my-stream"] = 10

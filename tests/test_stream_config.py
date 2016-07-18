@@ -17,7 +17,9 @@ class When_reading_a_config_file:
                         - baz
                         - dynamic_#date#
                     counter:
-                        redis:
+                        class: RedisCounter
+                        package: atomicpuppy.atomicpuppy
+                        config:
                             host: localhost
                             port: 1234
                 """)
@@ -129,7 +131,9 @@ class When_the_config_specifies_a_redis_counter:
                         - bar
                         - baz
                     counter:
-                        redis:
+                        class: RedisCounter
+                        package: atomicpuppy.atomicpuppy
+                        config:
                             host: localhost
                             port: 1234
                 """)

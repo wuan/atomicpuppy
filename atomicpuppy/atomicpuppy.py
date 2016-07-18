@@ -1,10 +1,11 @@
 import aiohttp
 import asyncio
 import datetime
-from enum import Enum
 import json
 import logging
 import platform
+from importlib import import_module
+from enum import Enum
 from uuid import UUID
 from concurrent.futures import TimeoutError
 
@@ -434,8 +435,11 @@ class EventCounter:
 
 class RedisCounter(EventCounter):
 
-    def __init__(self, redis, instance):
-        self._redis = redis
+    def __init__(self, host, port, instance):
+        self._redis = redis.StrictRedis(
+            host=host,
+            port=port,
+        )
         self._instance_name = instance
         self._logger = logging.getLogger(__name__)
 
@@ -491,14 +495,15 @@ class StreamConfigReader:
                                   timeout=cfg.get("timeout") or 20)
 
     def _make_counter(self, cfg, instance):
-        ctr = cfg.get('counter')
-        if(not ctr):
-            return (lambda: defaultdict(lambda: -1))
-        if(ctr["redis"]):
-            return lambda: RedisCounter(
-                redis.StrictRedis(port=ctr["redis"].get("port"),
-                                  host=ctr["redis"].get("host")),
-                instance)
+        module = cfg.get("counter")
+        if not module:
+            return lambda: defaultdict(lambda: -1)
+        if module:
+            _class = module.get("class")
+            package = module.get("package")
+            config = module.get("config")
+            Module = getattr(import_module(package), _class)
+            return lambda: Module(instance=instance, **config)
 
 
 class SubscriptionInfoStore:
