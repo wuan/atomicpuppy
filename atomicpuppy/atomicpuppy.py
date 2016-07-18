@@ -468,8 +468,7 @@ class RedisCounter(EventCounter):
 
 class StreamConfigReader:
 
-    def __init__(self):
-        pass
+    _logger = logging.getLogger(__name__)
 
     def read(self, config_file):
         cfg = None
@@ -495,15 +494,25 @@ class StreamConfigReader:
                                   timeout=cfg.get("timeout") or 20)
 
     def _make_counter(self, cfg, instance):
-        module = cfg.get("counter")
-        if not module:
+        counter_config = cfg.get("counter")
+        if not counter_config:
             return lambda: defaultdict(lambda: -1)
-        if module:
-            _class = module.get("class")
-            package = module.get("package")
-            config = module.get("config")
-            Module = getattr(import_module(package), _class)
-            return lambda: Module(instance=instance, **config)
+        if counter_config:
+            _class = counter_config.get("class")
+            package = counter_config.get("package")
+            parameters = counter_config.get("parameters")
+            try:
+                Module = getattr(import_module(package), _class)
+                return lambda: Module(instance=instance, **parameters)
+            except Exception as ex:
+                self._logger.exception("Unexpected error when creating a counter:")
+                raise CounterConfigurationError(counter_config)
+
+
+class CounterConfigurationError(Exception):
+
+    def __init__(self, config):
+        super().__init__("The following configuration is invalid: {}".format(config))
 
 
 class SubscriptionInfoStore:
