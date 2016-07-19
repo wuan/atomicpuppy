@@ -1,4 +1,4 @@
-from sqlcounter import SqlCounter
+from atomicpuppy_sqlcounter import SqlCounter
 
 
 class WhenStoringANewSqlCounter:

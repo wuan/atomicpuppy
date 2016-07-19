@@ -4,32 +4,29 @@ from retrying import retry
 from sqlalchemy import (
     Column,
     Integer,
-    literal,
     String,
     create_engine,
-    MetaData
+    MetaData,
+    Table
 )
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import sessionmaker, scoped_session, mapper
 
 from atomicpuppy.atomicpuppy import EventCounter
 
+metadata = MetaData()
 
-Base = declarative_base()
-            
+counters_table = Table('atomicpuppy_counters', metadata,
+        Column('key', String(4000), primary_key=True),
+        Column('position', Integer),
+    )
+
+class Counter:
+    def __init__(self, key, position):
+        self.key = key
+        self.position = position
 
 class SqlCounter(EventCounter):
-
-    class Counter(Base):
-        __tablename__ = 'atomicpuppy_counters'
-
-        key = Column(String, primary_key=True)
-        position = Column(Integer)
-
-        def __init__(self, key, pos):
-            self.key = key
-            self.position = pos
-
 
     _logger = logging.getLogger(__name__)
 
@@ -39,21 +36,24 @@ class SqlCounter(EventCounter):
         self._ensured_schema = False
         self._start_session = scoped_session(sessionmaker(bind=self._engine))
         self._instance_name = instance
+        mapper(Counter, counters_table)
 
     @retry(wait_exponential_multiplier=1000, wait_exponential_max=1000, stop_max_delay=6000)
     def __getitem__(self, stream):
         self._logger.debug("Fetching last read event for stream "+stream)
         key = self._key(stream)
         val = self._read_position(key)
-        if val:
-            val = int(val)
-            self._logger.info(
-                "Last read event for stream %s is %d",
-                stream,
-                val)
-            return val
-        return -1
+        if val is None:
+            return -1
 
+        val = int(val)
+        self._logger.info(
+            "Last read event for stream %s is %d",
+            stream,
+            val)
+        return val
+
+    @counter_circuit_breaker
     def __setitem__(self, stream, val):
         # insert or update where instance = xxx and stream = xxx
         key = self._key(stream)
@@ -61,13 +61,14 @@ class SqlCounter(EventCounter):
         # make sure the schema is there
         self._ensure_schema()
 
-        counter = s.query(SqlCounter.Counter).filter(SqlCounter.Counter.key == key).first()
+        counter = s.query(Counter).filter_by(key=key).first()
         if counter:
             counter.position = val
         else:
-            counter = SqlCounter.Counter(key, val)
+            counter = Counter(key=key, position=val)
         s.add(counter)
         s.commit()
+        s.flush()
         s.close()
 
 
@@ -75,8 +76,7 @@ class SqlCounter(EventCounter):
         s = self._start_session()
         # make sure the schema is there
         self._ensure_schema()
-
-        counter = s.query(SqlCounter.Counter).filter(SqlCounter.Counter.key == key).first()
+        counter = s.query(Counter).filter_by(key=key).first()
         if counter:
             pos = counter.position
         else:
@@ -92,9 +92,5 @@ class SqlCounter(EventCounter):
         if self._ensured_schema:
             return
 
-        counters_table = SqlCounter.Counter.__table__
         counters_table.create(self._engine, checkfirst=True)
         self._ensured_schema = True
-
-
-
