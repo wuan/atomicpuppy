@@ -107,6 +107,14 @@ class When_a_stream_contains_a_single_event_and_the_counter_is_at_the_start(Stre
     def it_should_contain_the_stream_id(self):
         assert(self.the_event.stream == "newstream")
 
+    def the_str_should_include_useful_stuff(self):
+        assert(
+            str(self.the_event) == (
+                "newstream/my-event-0 "
+                "(fbf4a1a1-b4a3-4dfe-a01f-ec52c34e16e4): {'a': 1}"
+            )
+        )
+
 
 class When_an_event_contains_no_data(StreamReaderContext):
 
