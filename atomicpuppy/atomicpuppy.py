@@ -1,10 +1,11 @@
 import aiohttp
 import asyncio
 import datetime
-from enum import Enum
 import json
 import logging
 import platform
+from importlib import import_module
+from enum import Enum
 from uuid import UUID
 from concurrent.futures import TimeoutError
 
@@ -56,11 +57,10 @@ class EventCounterCircuitBreaker(pybreaker.CircuitBreakerListener):
         pass
 
     def state_change(self, cb, old_state, new_state):
-        if(new_state.name == 'open'):
+        if new_state.name == 'open':
             self._log.error("Opening event counter circuit")
-        elif(new_state.name == 'closed'):
+        elif new_state.name == 'closed':
             self._log.info("Event counter circuit closed")
-        pass
 
     def failure(self, cb, exc):
         "Called when a function invocation raises a system error."
@@ -71,7 +71,7 @@ class EventCounterCircuitBreaker(pybreaker.CircuitBreakerListener):
         pass
 
 
-redis_circuit = pybreaker.CircuitBreaker(
+counter_circuit_breaker = pybreaker.CircuitBreaker(
     fail_max=20, reset_timeout=60, listeners=[
         EventCounterCircuitBreaker()
     ]
@@ -384,8 +384,8 @@ class EventRaiser:
                     self._counter[msg.stream] = msg.sequence
                 except pybreaker.CircuitBreakerError:
                     pass
-                except redis.RedisError:
-                    self._logger.warn("Failed to persist last read event")
+                except:
+                    self._logger.exception("Failed to persist last read event with {}".format(type(self._counter)))
             except RejectedMessageException:
                 self._logger.warn("%s message %s was rejected and has not been processed",
                                   msg.type, msg.id)
@@ -434,8 +434,11 @@ class EventCounter:
 
 class RedisCounter(EventCounter):
 
-    def __init__(self, redis, instance):
-        self._redis = redis
+    def __init__(self, host, port, instance):
+        self._redis = redis.StrictRedis(
+            host=host,
+            port=port,
+        )
         self._instance_name = instance
         self._logger = logging.getLogger(__name__)
 
@@ -453,7 +456,7 @@ class RedisCounter(EventCounter):
             return val
         return -1
 
-    @redis_circuit
+    @counter_circuit_breaker
     def __setitem__(self, stream, val):
         key = self._key(stream)
         self._redis.set(key, val)
@@ -464,8 +467,7 @@ class RedisCounter(EventCounter):
 
 class StreamConfigReader:
 
-    def __init__(self):
-        pass
+    _logger = logging.getLogger(__name__)
 
     def read(self, config_file):
         cfg = None
@@ -491,14 +493,25 @@ class StreamConfigReader:
                                   timeout=cfg.get("timeout") or 20)
 
     def _make_counter(self, cfg, instance):
-        ctr = cfg.get('counter')
-        if(not ctr):
-            return (lambda: defaultdict(lambda: -1))
-        if(ctr["redis"]):
-            return lambda: RedisCounter(
-                redis.StrictRedis(port=ctr["redis"].get("port"),
-                                  host=ctr["redis"].get("host")),
-                instance)
+        counter_config = cfg.get("counter")
+        if not counter_config:
+            return lambda: defaultdict(lambda: -1)
+        if counter_config:
+            _class = counter_config.get("class")
+            package = counter_config.get("package")
+            parameters = counter_config.get("parameters")
+            try:
+                Module = getattr(import_module(package), _class)
+                return lambda: Module(instance=instance, **parameters)
+            except Exception as ex:
+                self._logger.exception("Unexpected error when creating a counter:")
+                raise CounterConfigurationError(counter_config)
+
+
+class CounterConfigurationError(Exception):
+
+    def __init__(self, config):
+        super().__init__("The following configuration is invalid: {}".format(config))
 
 
 class SubscriptionInfoStore:

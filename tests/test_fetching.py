@@ -10,9 +10,11 @@ import fakeredis
 from freezegun import freeze_time
 
 from atomicpuppy.atomicpuppy import (
-    StreamReader, SubscriptionInfoStore, SubscriptionConfig, RedisCounter
+    StreamReader, SubscriptionInfoStore, SubscriptionConfig
 )
 from .fakehttp import FakeHttp, SpyLog
+from .fakes import FakeRedisCounter
+
 
 SCRIPT_PATH = os.path.dirname(__file__)
 
@@ -25,7 +27,7 @@ class StreamReaderContext:
     _port = 2113
 
     def __init__(self):
-        self.counter = RedisCounter(fakeredis.FakeStrictRedis(), "test-instace-{}".format(uuid4()))
+        self.counter = FakeRedisCounter("test-instace-{}".format(uuid4()))
 
     def given_an_event_loop(self):
         logging.basicConfig(filename='example.log', level=logging.DEBUG)

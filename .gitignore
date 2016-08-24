@@ -1,6 +1,6 @@
 *.pyc
 .eggs
-AtomicPuppy.egg-info/
+*.egg-info/
 dist
 *.log
 .tox/

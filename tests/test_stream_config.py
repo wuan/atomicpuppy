@@ -17,7 +17,9 @@ class When_reading_a_config_file:
                         - baz
                         - dynamic_#date#
                     counter:
-                        redis:
+                        class: RedisCounter
+                        package: atomicpuppy.atomicpuppy
+                        parameters:
                             host: localhost
                             port: 1234
                 """)
@@ -129,7 +131,9 @@ class When_the_config_specifies_a_redis_counter:
                         - bar
                         - baz
                     counter:
-                        redis:
+                        class: RedisCounter
+                        package: atomicpuppy.atomicpuppy
+                        parameters:
                             host: localhost
                             port: 1234
                 """)
@@ -142,3 +146,31 @@ class When_the_config_specifies_a_redis_counter:
 
     def it_should_return_a_redis_counter(self):
         assert(isinstance(self.ctr, RedisCounter))
+
+
+class When_the_counter_config_is_invalid:
+
+    def given_a_config_file(self):
+        self._file = io.BytesIO(b"""
+                atomicpuppy:
+                    host: eventstore.local
+                    port: 999
+                    streams:
+                        - foo
+                        - bar
+                        - baz
+                    counter:
+                        foo: bar
+                """)
+        self.raised_exception = None
+
+    def because_we_read_the_file(self):
+        self.reader = StreamConfigReader()
+        with self._file as f:
+            try:
+                self.result = self.reader.read(f)
+            except CounterConfigurationError as ex:
+                self.raised_exception = ex
+
+    def it_should_raise_a_configuration_error(self):
+        assert type(self.raised_exception) is CounterConfigurationError
