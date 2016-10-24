@@ -2,7 +2,6 @@ import asyncio
 from atomicpuppy import EventRaiser, RejectedMessageException
 from atomicpuppy.atomicpuppy import Event
 from .fakehttp import SpyLog
-from concurrent.futures import TimeoutError
 from uuid import uuid4
 
 
