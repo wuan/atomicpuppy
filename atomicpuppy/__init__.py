@@ -25,6 +25,9 @@ class AtomicPuppy:
         config = StreamConfigReader().read(cfg_file)
         loop = loop or asyncio.get_event_loop()
         self._ap = _AtomicPuppy(config, callback, loop)
+        # I don't know why these are public
+        self.config = config
+        self.callback = callback
 
     def start(self, *args, **kwargs):
         return self._ap.start(*args, **kwargs)
