@@ -44,7 +44,13 @@ class Event:
         self.sequence = sequence
 
     def __str__(self):
-        return "{}-{} ({}): {}".format(self.type, self.sequence, self.id, self.data)
+        return "{}/{}-{} ({}): {}".format(
+            self.stream,
+            self.type,
+            self.sequence,
+            self.id,
+            self.data
+        )
 
 
 class EventCounterCircuitBreaker(pybreaker.CircuitBreakerListener):
