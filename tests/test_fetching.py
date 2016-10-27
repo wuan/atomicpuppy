@@ -6,17 +6,59 @@ import os
 from unittest.mock import patch
 from uuid import UUID, uuid4
 
-import fakeredis
 from freezegun import freeze_time
 
 from atomicpuppy.atomicpuppy import (
     StreamReader, SubscriptionInfoStore, SubscriptionConfig
 )
+from atomicpuppy import AtomicPuppyLoop
 from .fakehttp import FakeHttp, SpyLog
 from .fakes import FakeRedisCounter
 
 
 SCRIPT_PATH = os.path.dirname(__file__)
+
+
+class When_a_stream_contains_multiple_events:
+
+    _host = 'eventstore.local'
+    _port = 2113
+
+    def given_two_feeds(self):
+        logging.basicConfig(filename='example.log', level=logging.DEBUG)
+        self._loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(None)
+
+        self.http = FakeHttp(self._loop)
+        stream_uri = (
+            'http://eventstore.local:2113/streams/otherstream/0/forward/20')
+        self.http.registerJsonUri(
+            stream_uri,
+            SCRIPT_PATH + '/responses/two-events-otherstream.json')
+        # It should stop once it finds the matching event, so fail if it does
+        # not
+        self.http.registerNoMoreRequests(stream_uri)
+
+    def because_we_call_find_forwards(self):
+        ap_config = SubscriptionConfig(
+            streams=None,
+            counter_factory='dummy',
+            instance_name='spam',
+            host=self._host,
+            port=self._port,
+            timeout=20)
+        mock = self.http.getMock()
+        def predicate(evt):
+            return evt.type == 'other_event'
+        ap_loop = AtomicPuppyLoop(ap_config, self._loop)
+        with patch('aiohttp.request', new=mock):
+            self.evt = self._loop.run_until_complete(
+                ap_loop.find_forwards('otherstream', predicate))
+
+    def it_should_fetch_the_first_matching_event(self):
+        assert self.evt.stream == 'otherstream'
+        assert self.evt.type == 'other_event'
+        assert self.evt.data == {'spam': '1'}
 
 
 class StreamReaderContext:

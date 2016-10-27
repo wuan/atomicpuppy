@@ -1,30 +1,24 @@
+from collections import namedtuple, defaultdict
+from concurrent.futures import TimeoutError
+from enum import Enum
+from importlib import import_module
+from uuid import UUID
 import aiohttp
 import asyncio
 import datetime
 import json
 import logging
 import platform
-from importlib import import_module
-from enum import Enum
-from uuid import UUID
-from concurrent.futures import TimeoutError
-
-from retrying import retry
-import yaml
-
-import aiohttp
-import asyncio
-from atomicpuppy.errors import HttpClientError, HttpServerError, RejectedMessageException, UrlError
-from collections import namedtuple, defaultdict
-import platform
-import pybreaker
-from retrying import retry
 import random
+
+from retrying import retry
+import pybreaker
 import redis
 import requests
-from uuid import UUID
 import yaml
-from concurrent.futures import TimeoutError
+
+from atomicpuppy.errors import HttpClientError, HttpServerError, RejectedMessageException, UrlError
+
 
 SubscriptionConfig = namedtuple('SubscriptionConfig', ['streams',
                                                        'counter_factory',
@@ -231,6 +225,32 @@ class StreamReader:
         if(nxt):
             yield from self.seek_on_page(nxt)
 
+    @asyncio.coroutine
+    def find_forwards(self, uri, predicate, predicate_label='predicate'):
+        """Return the first event matching predicate, starting at uri.
+
+        Note: 'forwards', both here and in Event Store, means 'towards the
+        event emitted furthest in the past'.  This seems to be the opposite of
+        what everybody expects.
+        """
+        logger = self.logger.getChild(predicate_label)
+        logger.info('Fetching first matching event')
+        while True:
+            r = yield from self._fetcher.fetch(uri)
+            js = yield from r.json()
+            if js["entries"]:
+                for e in js["entries"]:
+                    evt = self._make_event(e)
+                    if predicate(evt):
+                        logger.info('Found first matching event: %s', evt)
+                        return evt
+            next_uri = self._get_link(js, "next")
+            if next_uri is None:
+                logger.info("No matching event found")
+                return None
+
+            uri = next_uri
+
     def _get_link(self, js, rel):
         for link in js["links"]:
             if(link["relation"] == rel):
@@ -416,7 +436,6 @@ class EventRaiser:
             except:
                 self._logger.exception("Failed to process message %s", msg)
 
-
     @asyncio.coroutine
     def consume_events(self):
         self._is_running = True
@@ -485,6 +504,19 @@ class RedisCounter(EventCounter):
 
     def _key(self, stream):
         return "urn:atomicpuppy:"+self._instance_name+":"+stream+":position"
+
+
+class InMemoryAutoIncrementingSingleStreamCounter:
+
+    def __init__(self, stream):
+        self._stream = stream
+        self._last_read = -1
+
+    def __getitem__(self, stream):
+        assert stream == self._stream
+        last = self._last_read
+        self._last_read += 1
+        return last
 
 
 class StreamConfigReader:
