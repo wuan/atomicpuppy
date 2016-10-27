@@ -361,6 +361,22 @@ class StreamFetcher:
                 yield from self.sleep(s)
 
 
+def _ensure_coroutine_function(func):
+    """Return a coroutine function.
+
+    func: either a coroutine function or a regular function
+
+    Note a coroutine function is not a coroutine!
+    """
+    if asyncio.iscoroutinefunction(func):
+        return func
+    else:
+        @asyncio.coroutine
+        def coroutine_function(evt):
+            func(evt)
+            yield
+        return coroutine_function
+
 
 class EventRaiser:
 
@@ -385,7 +401,7 @@ class EventRaiser:
                                                   loop=self._loop)
                 if not msg:
                     continue
-                self._callback(msg)
+                yield from _ensure_coroutine_function(self._callback)(msg)
                 try:
                     self._counter[msg.stream] = msg.sequence
                 except pybreaker.CircuitBreakerError:
@@ -412,7 +428,7 @@ class EventRaiser:
                 if not msg:
                     self._is_running = False
                     return
-                self._callback(msg)
+                yield from _ensure_coroutine_function(self._callback)(msg)
                 try:
                     self._counter[msg.stream] = msg.sequence
                 except pybreaker.CircuitBreakerError:
