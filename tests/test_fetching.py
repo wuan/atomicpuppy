@@ -501,6 +501,10 @@ retry.
 """
 
 
+def fail_with_client_error():
+    raise aiohttp.errors.ClientOSError("Darn it, can't connect")
+
+
 class When_a_client_error_occurs_during_fetch(StreamReaderContext):
 
     _log = SpyLog()
@@ -509,7 +513,7 @@ class When_a_client_error_occurs_during_fetch(StreamReaderContext):
         self.http.registerCallbacksUri(
             'http://eventstore.local:2113/streams/newstream/0/forward/20',
             [
-                lambda: exec('raise aiohttp.errors.ClientOSError("Darn it, can\'t connect")'),
+                fail_with_client_error,
                 lambda: exec('raise ValueError()')
             ]
         )
@@ -539,8 +543,8 @@ class When_multiple_errors_of_the_same_type_occur(StreamReaderContext):
         self.http.registerCallbacksUri(
             'http://eventstore.local:2113/streams/newstream/0/forward/20',
             [
-                lambda: exec('raise aiohttp.errors.ClientOSError("Darn it, can\'t connect")'),
-                lambda: exec('raise aiohttp.errors.ClientOSError("Darn it, can\'t connect")'),
+                fail_with_client_error,
+                fail_with_client_error,
                 lambda: exec('raise ValueError()')
             ]
         )
@@ -566,6 +570,10 @@ a backoff.
 """
 
 
+def fail_with_disconnected_error():
+    raise aiohttp.errors.DisconnectedError("Darn it, can't connect")
+
+
 class When_a_disconnection_error_occurs_during_fetch(StreamReaderContext):
 
     _log = SpyLog()
@@ -574,7 +582,7 @@ class When_a_disconnection_error_occurs_during_fetch(StreamReaderContext):
         self.http.registerCallbacksUri(
             'http://eventstore.local:2113/streams/newstream/0/forward/20',
             [
-                lambda: exec('raise aiohttp.errors.DisconnectedError("Darn it, can\'t connect")'),
+                fail_with_disconnected_error,
                 lambda: exec('raise ValueError()')
             ]
         )
@@ -594,6 +602,10 @@ class When_a_disconnection_error_occurs_during_fetch(StreamReaderContext):
                    for r in self._log._logs))
 
 
+def fail_with_timeout():
+    raise aiohttp.errors.TimeoutError()
+
+
 class When_a_timeout_error_occurs_during_fetch(StreamReaderContext):
 
     """
@@ -607,7 +619,7 @@ class When_a_timeout_error_occurs_during_fetch(StreamReaderContext):
         self.http.registerCallbacksUri(
             'http://eventstore.local:2113/streams/newstream/0/forward/20',
             [
-                lambda: exec('raise aiohttp.errors.TimeoutError()'),
+                fail_with_timeout,
                 lambda: exec('raise ValueError()')
             ]
         )
@@ -633,6 +645,10 @@ a backoff.
 """
 
 
+def fail_with_client_response_error():
+    raise aiohttp.errors.ClientResponseError("Darn it, something went bad")
+
+
 class When_a_client_response_error_occurs_during_fetch(StreamReaderContext):
 
     _log = SpyLog()
@@ -641,7 +657,7 @@ class When_a_client_response_error_occurs_during_fetch(StreamReaderContext):
         self.http.registerCallbacksUri(
             'http://eventstore.local:2113/streams/newstream/0/forward/20',
             [
-                lambda: exec('raise aiohttp.errors.ClientResponseError("Darn it, something went bad")'),
+                fail_with_client_response_error,
                 lambda: exec('raise ValueError()')
             ]
         )
