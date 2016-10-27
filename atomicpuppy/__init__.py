@@ -5,7 +5,8 @@ from .atomicpuppy import (
     Event,
     EventPublisher,
     EventStoreJsonEncoder,
-    SubscriptionInfoStore
+    SubscriptionInfoStore,
+    RedisCounter
 )
 from .errors import *
 
