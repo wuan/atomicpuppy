@@ -43,7 +43,7 @@ class AtomicPuppyLoop:
         return _AtomicPuppy(self._config, callback, self._loop)
 
     @asyncio.coroutine
-    def find_forwards(self, stream, predicate):
+    def find_forwards(self, stream, predicate, predicate_label='predicate'):
         # This import is here to avoid polluting the package namespace
         from .atomicpuppy import InMemoryAutoIncrementingSingleStreamCounter
         instance_name = (
@@ -61,7 +61,8 @@ class AtomicPuppyLoop:
             timeout=self._config.timeout
         )
         subscription = subscription_info_store.get(stream)
-        return (yield from reader.find_forwards(subscription.uri, predicate))
+        return (yield from reader.find_forwards(
+            subscription.uri, predicate, predicate_label))
 
 
 class _AtomicPuppy:
