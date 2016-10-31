@@ -13,37 +13,14 @@ from .errors import *
 import asyncio
 
 
-def make_atomicpuppy_loop(cfg_file, loop=None):
-    config = StreamConfigReader().read(cfg_file)
-    loop = loop or asyncio.get_event_loop()
-    return AtomicPuppyLoop(config, loop)
+class EventFinder:
 
-
-class AtomicPuppy:
-
-    def __init__(self, cfg_file, callback, loop=None):
-        config = StreamConfigReader().read(cfg_file)
-        loop = loop or asyncio.get_event_loop()
-        self._ap = _AtomicPuppy(config, callback, loop)
-        # I don't know why these are public
-        self.config = config
-        self.callback = callback
-
-    def start(self, *args, **kwargs):
-        return self._ap.start(*args, **kwargs)
-
-    def stop(self):
-        return self._ap.stop()
-
-
-class AtomicPuppyLoop:
-
-    def __init__(self, config, loop=None):
-        self._config = config
+    def __init__(self, cfg_file, loop=None):
+        """
+        cfg_file: dictionary or filename or yaml text
+        """
+        self._config = StreamConfigReader().read(cfg_file)
         self._loop = loop or asyncio.get_event_loop()
-
-    def start(self, callback):
-        return _AtomicPuppy(self._config, callback, self._loop)
 
     @asyncio.coroutine
     def find_forwards(self, stream, predicate, predicate_label='predicate'):
@@ -68,14 +45,17 @@ class AtomicPuppyLoop:
             subscription.uri, predicate, predicate_label))
 
 
-class _AtomicPuppy:
+class AtomicPuppy:
 
     running = False
 
-    def __init__(self, config, callback, loop=None):
-        self.config = config
+    def __init__(self, cfg_file, callback, loop=None):
+        """
+        cfg_file: dictionary or filename or yaml text
+        """
+        self.config = StreamConfigReader().read(cfg_file)
         self.callback = callback
-        self._loop = loop
+        self._loop = loop or asyncio.get_event_loop()
         self._queue = asyncio.Queue(maxsize=20, loop=self._loop)
 
     def start(self, run_once=False):
