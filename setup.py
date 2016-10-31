@@ -22,7 +22,7 @@ tests_require = [
 
 setup(
     name="AtomicPuppy",
-    version="0.3.pre",
+    version="0.3.1",
     packages=find_packages(),
     dependency_links=[
         "git+https://github.com/OddBloke/HTTPretty.git@f899d1bda8234658c2cec5aab027cb5b7c42203c#egg=HTTPretty"

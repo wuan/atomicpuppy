@@ -61,6 +61,11 @@ class FakeHttp:
         for cb in funcs:
             self._callbacks[uri].append(cb)
 
+    def registerNoMoreRequests(self, uri):
+        def fail():
+            raise Exception('No more expected requests are queued')
+        self._callbacks[uri].append(fail)
+
     @asyncio.coroutine
     def respond(self, uri):
         if(self._callbacks[uri]):

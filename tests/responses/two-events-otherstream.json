@@ -1,0 +1,88 @@
+{
+  "title": "Event stream 'otherstream'",
+  "id": "http://127.0.0.1:2113/streams/otherstream",
+  "updated": "2016-10-24T14:06:04.227331Z",
+  "streamId": "otherstream",
+  "author": {
+    "name": "EventStore"
+  },
+  "headOfStream": true,
+  "links": [
+    {
+      "uri": "http://127.0.0.1:2113/streams/otherstream",
+      "relation": "self"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/otherstream/head/backward/20",
+      "relation": "first"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/otherstream/2/forward/20",
+      "relation": "previous"
+    },
+    {
+      "uri": "http://127.0.0.1:2113/streams/otherstream/metadata",
+      "relation": "metadata"
+    }
+  ],
+  "entries": [
+    {
+      "eventId": "6cad66d5-d3a9-de69-13fe-f4aea285549a",
+      "eventType": "ignored_event",
+      "eventNumber": 1,
+      "data": "{\n  \"spam\": \"2\"\n}",
+      "streamId": "otherstream",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 1,
+      "positionStreamId": "otherstream",
+      "title": "1@otherstream",
+      "id": "http://127.0.0.1:2113/streams/otherstream/1",
+      "updated": "2016-10-24T14:07:02.856659Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "ignored_event",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/otherstream/1",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/otherstream/1",
+          "relation": "alternate"
+        }
+      ]
+    },
+    {
+      "eventId": "eb2d45cb-5665-0f8b-8130-12f8ef2c0adf",
+      "eventType": "other_event",
+      "eventNumber": 0,
+      "data": "{\n  \"spam\": \"1\"\n}",
+      "streamId": "otherstream",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 0,
+      "positionStreamId": "otherstream",
+      "title": "0@otherstream",
+      "id": "http://127.0.0.1:2113/streams/otherstream/0",
+      "updated": "2016-10-24T14:06:04.227331Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "other_event",
+      "links": [
+        {
+          "uri": "http://127.0.0.1:2113/streams/otherstream/0",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://127.0.0.1:2113/streams/otherstream/0",
+          "relation": "alternate"
+        }
+      ]
+    }
+  ]
+}
