@@ -47,8 +47,6 @@ class EventFinder:
 
 class AtomicPuppy:
 
-    running = False
-
     def __init__(self, cfg_file, callback, loop=None):
         """
         cfg_file: dictionary or filename or yaml text
