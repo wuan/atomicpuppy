@@ -11,7 +11,7 @@ from freezegun import freeze_time
 from atomicpuppy.atomicpuppy import (
     StreamReader, SubscriptionInfoStore, SubscriptionConfig
 )
-from atomicpuppy import AtomicPuppyLoop
+from atomicpuppy import EventFinder
 from .fakehttp import FakeHttp, SpyLog
 from .fakes import FakeRedisCounter
 
@@ -40,17 +40,16 @@ class When_a_stream_contains_multiple_events:
         self.http.registerNoMoreRequests(stream_uri)
 
     def because_we_call_find_forwards(self):
-        ap_config = SubscriptionConfig(
-            streams=None,
-            counter_factory='dummy',
-            instance_name='spam',
-            host=self._host,
-            port=self._port,
-            timeout=20)
+        config = {
+            'streams': [],
+            'host': self._host,
+            'port': self._port,
+            'instance': 'eventstore_reader'
+        }
         mock = self.http.getMock()
         def predicate(evt):
             return evt.type == 'other_event'
-        ap_loop = AtomicPuppyLoop(ap_config, self._loop)
+        ap_loop = EventFinder({'atomicpuppy': config}, self._loop)
         with patch('aiohttp.request', new=mock):
             self.evt = self._loop.run_until_complete(
                 ap_loop.find_forwards('otherstream', predicate))
