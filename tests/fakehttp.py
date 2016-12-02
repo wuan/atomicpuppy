@@ -4,6 +4,8 @@ from unittest.mock import Mock
 from collections import deque, defaultdict
 import logging
 
+import yarl
+
 
 class FakeHttp:
 
@@ -24,7 +26,7 @@ class FakeHttp:
                     fut.set_result(f.read().encode('utf-8'))
                 return fut
 
-            resp = ClientResponse('GET', uri)
+            resp = ClientResponse('GET', yarl.URL(uri))
             resp.headers = {
                 'Content-Type': 'application/json'
             }
@@ -48,7 +50,7 @@ class FakeHttp:
     def registerEmptyUri(self, uri, status):
         def cb():
             fut = asyncio.Future(loop=self._loop)
-            resp = ClientResponse('GET', 'foo')
+            resp = ClientResponse('GET', yarl.URL('foo'))
             resp.status = status
             fut.set_result(resp)
             return fut
