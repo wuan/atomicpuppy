@@ -23,26 +23,31 @@ class EventFinder:
         self._loop = loop or asyncio.get_event_loop()
 
     @asyncio.coroutine
-    def find_forwards(self, stream, predicate, predicate_label='predicate'):
-        # This import is here to avoid polluting the package namespace
-        from .atomicpuppy import InMemoryAutoIncrementingSingleStreamCounter
+    def find_backwards(self, stream, predicate, predicate_label='predicate'):
+        # This import is here to avoid polluting the package namespace.
+        # TODO: figure out which other names should be removed from the package
+        # namespace or put in __all__ and do so (I guess only AtomicPuppy,
+        # EventFinder, and RedisCounter are intended to be exposed?)
+        import atomicpuppy.atomicpuppy
         instance_name = (
-            self._config.instance_name + ' find_forwards {}'.format(stream)
+            self._config.instance_name + ' find_backwards {}'.format(stream)
         )
-        queue = asyncio.Queue(maxsize=20, loop=self._loop)
-        c = InMemoryAutoIncrementingSingleStreamCounter(stream)
-        subscription_info_store = SubscriptionInfoStore(self._config, c)
-        reader = StreamReader(
-            queue=queue,
+        fetcher = atomicpuppy.atomicpuppy.StreamFetcher(
+            None, loop=self._loop, nosleep=False, timeout=self._config.timeout)
+        head_uri = 'http://{}:{}/streams/{}/head/backward/{}'.format(
+            self._config.host,
+            self._config.port,
+            stream,
+            self._config.page_size)
+        finder = atomicpuppy.atomicpuppy.EventFinder(
+            fetcher=fetcher,
             stream_name=stream,
             loop=self._loop,
             instance_name=instance_name,
-            subscriptions_store=subscription_info_store,
-            timeout=self._config.timeout
+            head_uri=head_uri,
         )
-        subscription = subscription_info_store.get(stream)
-        return (yield from reader.find_forwards(
-            subscription.uri, predicate, predicate_label))
+        return (yield from
+                finder.find_backwards(stream, predicate, predicate_label))
 
 
 class AtomicPuppy:

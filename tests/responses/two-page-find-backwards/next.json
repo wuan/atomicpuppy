@@ -1,0 +1,60 @@
+{
+  "title": "Event stream 'more_spam_stream'",
+  "id": "http://localhost:2113/streams/more_spam_stream",
+  "updated": "2016-11-29T11:26:27.690739Z",
+  "streamId": "more_spam_stream",
+  "author": {
+    "name": "EventStore"
+  },
+  "headOfStream": false,
+  "selfUrl": "http://localhost:2113/streams/more_spam_stream",
+  "links": [
+    {
+      "uri": "http://localhost:2113/streams/more_spam_stream",
+      "relation": "self"
+    },
+    {
+      "uri": "http://localhost:2113/streams/more_spam_stream/head/backward/2",
+      "relation": "first"
+    },
+    {
+      "uri": "http://localhost:2113/streams/more_spam_stream/1/forward/2",
+      "relation": "previous"
+    },
+    {
+      "uri": "http://localhost:2113/streams/more_spam_stream/metadata",
+      "relation": "metadata"
+    }
+  ],
+  "entries": [
+    {
+      "eventId": "15677c86-5495-49d0-b685-100144de7685",
+      "eventType": "sought_event",
+      "eventNumber": 0,
+      "data": "{\"spam\": \"1\"}",
+      "streamId": "more_spam_stream",
+      "isJson": true,
+      "isMetaData": false,
+      "isLinkMetaData": false,
+      "positionEventNumber": 0,
+      "positionStreamId": "more_spam_stream",
+      "title": "0@more_spam_stream",
+      "id": "http://localhost:2113/streams/more_spam_stream/0",
+      "updated": "2016-11-29T11:26:27.690739Z",
+      "author": {
+        "name": "EventStore"
+      },
+      "summary": "ignored_event",
+      "links": [
+        {
+          "uri": "http://localhost:2113/streams/more_spam_stream/0",
+          "relation": "edit"
+        },
+        {
+          "uri": "http://localhost:2113/streams/more_spam_stream/0",
+          "relation": "alternate"
+        }
+      ]
+    }
+  ]
+}

@@ -1,3 +1,29 @@
+"""Atomicpuppy implementation.
+
+Don't import from this module: import from the top-level atomicpuppy package.
+
+
+Event Store terminology cheat sheet:
+
+Here's the first and last 'page':
+
+head -> event 10000, say (first)     ...     ...
+        event 9999                           event 1
+                ...                            event 0 (last)
+
+The most recent event in time is on the left.
+
+The directions are named like this:
+
+<-- forwards ---                       --- backwards -->
+
+And the links on each page are named like this:
+
+            <<first        ...         last>>
+            <previous      ...          next>
+"""
+
+
 from collections import namedtuple, defaultdict
 from concurrent.futures import TimeoutError
 from enum import Enum
@@ -32,7 +58,8 @@ SubscriptionConfig = namedtuple('SubscriptionConfig', ['streams',
                                                        'instance_name',
                                                        'host',
                                                        'port',
-                                                       'timeout'])
+                                                       'timeout',
+                                                       'page_size'])
 
 
 class Event:
@@ -109,6 +136,68 @@ class SubscriberInfo:
         return self._uri
 
 
+class Page:
+
+    def __init__(self, js, logger):
+        self._js = js
+        self._logger = logger
+
+    def is_empty(self):
+        # TODO: I'm not certain what types js["entries"] can have.  Find out
+        # and remove any un-needed calls of this method (I'm assuming only type
+        # list).
+        return not self._js["entries"]
+
+    def is_event_present(self, event_number):
+        for e in self._js["entries"]:
+            if e["positionEventNumber"] <= event_number:
+                return True
+        else:
+            return False
+
+    def iter_events_since(self, event_number):
+        for e in reversed(self._js['entries']):
+            if e["positionEventNumber"] > event_number:
+                evt = self._make_event(e)
+                if evt is not None:
+                    yield evt
+
+    def iter_events_matching(self, predicate):
+        if not self.is_empty():
+            for e in self._js["entries"]:
+                evt = self._make_event(e)
+                if evt is None:
+                    continue
+                if predicate(evt):
+                    self._logger.info('Found first matching event: %s', evt)
+                    yield evt
+
+    def get_link(self, rel):
+        for link in self._js["links"]:
+            if(link["relation"] == rel):
+                return link["uri"]
+
+    def _make_event(self, e):
+        try:
+            data = json.loads(e["data"], encoding='UTF-8')
+        except KeyError:
+            # Eventstore allows events with no `data` to be posted. If that
+            # happens, then atomicpuppy doesn't know what to do
+            self._logger.warning(
+                "No `data` key found on event {}".format(e))
+            return None
+        except ValueError:
+            self._logger.error(
+                "Failed to parse json data for %s message %s",
+                e.get("eventType"), e.get("eventId"))
+            return None
+        type = e["eventType"]
+        id = UUID(e["eventId"])
+        stream = e["positionStreamId"]
+        sequence = e["positionEventNumber"]
+        return Event(id, type, data, stream, sequence)
+
+
 class StreamReader:
 
     def __init__(self, queue, stream_name, loop, instance_name, subscriptions_store, timeout, nosleep=False):
@@ -157,10 +246,8 @@ class StreamReader:
                 subscription.uri)
             yield from self.seek_on_page(subscription.uri)
         else:
-            r = yield from self._fetcher.fetch(subscription.uri)
-            js = yield from r.json()
-
-            last = self._get_link(js, "last")
+            page = yield from self._fetch_page(subscription.uri)
+            last = page.get_link("last")
             if(last):
                 self.logger.debug(
                     "No last read event, skipping to last page %s",
@@ -170,26 +257,24 @@ class StreamReader:
                 self.logger.debug(
                     "No last read event, yielding events from this page %s",
                     subscription.uri)
-                yield from self._raise_page_events(js)
+                yield from self._raise_page_events(page)
 
     @asyncio.coroutine
     def seek_on_page(self, uri):
         self.logger.debug("Looking for last read event on page %s", uri)
-        r = yield from self._fetcher.fetch(uri)
-        js = yield from r.json()
-        yield from self._seek_to_last_read(js)
+        page = yield from self._fetch_page(uri)
+        yield from self._seek_to_last_read(page)
 
     @asyncio.coroutine
     def _walk_forwards(self, prev_uri):
         uri = prev_uri
         while True:
             self.logger.debug("walking forwards from %s", uri)
-            r = yield from self._fetcher.fetch(uri)
-            js = yield from r.json()
-            if js["entries"]:
+            page = yield from self._fetch_page(uri)
+            if not page.is_empty():
                 self.logger.debug("raising events from page %s", uri)
-                yield from self._raise_page_events(js)
-            prev_uri = self._get_link(js, "previous")
+                yield from self._raise_page_events(page)
+            prev_uri = page.get_link("previous")
             if not prev_uri:
                 # loop until there's a prev link, otherwise it means
                 # we are at the end or we are fetching an empty page
@@ -202,84 +287,73 @@ class StreamReader:
             self.logger.debug("Continuing to previous page %s", prev_uri)
             uri = prev_uri
 
-    @asyncio.coroutine
-    def _raise_page_events(self, js):
-        subscription = self._subscriptions.get(self._stream)
-        stack = []
-        for e in js['entries']:
-            if(e["positionEventNumber"] > subscription.last_read):
-                stack.append(e)
-        while(stack):
-            evt = self._make_event(stack.pop())
-            if(evt):
-                yield from self._queue.put(evt)
-                self._subscriptions.update_sequence(self._stream, evt.sequence)
+    def _fetch_page(self, uri):
+        r = yield from self._fetcher.fetch(uri)
+        js = yield from r.json()
+        return Page(js, self.logger)
 
     @asyncio.coroutine
-    def _seek_to_last_read(self, js):
+    def _raise_page_events(self, page):
         subscription = self._subscriptions.get(self._stream)
-        for e in js["entries"]:
-            if(e["positionEventNumber"] <= subscription.last_read):
-                self.logger.debug(
-                    "Found last read event on current page, raising events")
-                yield from self._raise_page_events(js)
-                prev = self._get_link(js, "previous")
-                if(prev):
-                    yield from self._walk_forwards(prev)
-                    return
+        for evt in page.iter_events_since(subscription.last_read):
+            yield from self._queue.put(evt)
+            self._subscriptions.update_sequence(self._stream, evt.sequence)
 
-        nxt = self._get_link(js, "next")
+    @asyncio.coroutine
+    def _seek_to_last_read(self, page):
+        subscription = self._subscriptions.get(self._stream)
+        if page.is_event_present(subscription.last_read):
+            self.logger.debug(
+                "Found last read event on current page, raising events")
+            yield from self._raise_page_events(page)
+            prev = page.get_link("previous")
+            if prev:
+                yield from self._walk_forwards(prev)
+                return
+
+        nxt = page.get_link("next")
         if(nxt):
             yield from self.seek_on_page(nxt)
 
-    @asyncio.coroutine
-    def find_forwards(self, uri, predicate, predicate_label='predicate'):
-        """Return the first event matching predicate, starting at uri.
 
-        Note: 'forwards', both here and in Event Store, means 'towards the
-        event emitted furthest in the past'.  This seems to be the opposite of
-        what everybody expects.
+class EventFinder:
+
+    def __init__(self, fetcher, stream_name, loop, instance_name, head_uri):
+        self._fetcher = fetcher
+        self._loop = loop
+        self._stream = stream_name
+        self._head_uri = head_uri
+        self._logger = logging.getLogger('atomicpuppy.finder@{}/{}'.format(instance_name, stream_name))
+
+    @asyncio.coroutine
+    def find_backwards(self, stream_name, predicate, predicate_label='predicate'):
+        """Return first event matching predicate, or None if none exists.
+
+        Note: 'backwards', both here and in Event Store, means 'towards the
+        event emitted furthest in the past'.
         """
-        logger = self.logger.getChild(predicate_label)
+        logger = self._logger.getChild(predicate_label)
         logger.info('Fetching first matching event')
-        while True:
+        uri = self._head_uri
+        try:
             r = yield from self._fetcher.fetch(uri)
-            js = yield from r.json()
-            if js["entries"]:
-                for e in js["entries"]:
-                    evt = self._make_event(e)
-                    if predicate(evt):
-                        logger.info('Found first matching event: %s', evt)
-                        return evt
-            next_uri = self._get_link(js, "next")
-            if next_uri is None:
-                logger.info("No matching event found")
+        except HttpNotFoundError as e:
+            raise StreamNotFoundError() from e
+        js = yield from r.json()
+        page = Page(js, logger)
+        while True:
+            evt = next(page.iter_events_matching(predicate), None)
+            if evt is not None:
+                return evt
+
+            uri = page.get_link("next")
+            if uri is None:
+                logger.warning("No matching event found")
                 return None
 
-            uri = next_uri
-
-    def _get_link(self, js, rel):
-        for link in js["links"]:
-            if(link["relation"] == rel):
-                return link["uri"]
-
-    def _make_event(self, e):
-        try:
-            data = json.loads(e["data"], encoding='UTF-8')
-        except KeyError:
-            # Eventstore allows events with no `data` to be posted. If that
-            # happens, then atomicpuppy doesn't know what to do
-            self.logger.warning("No `data` key found on event {}".format(e))
-            return None
-        except ValueError:
-            self.logger.error("Failed to parse json data for %s message %s",
-                              e.get("eventType"), e.get("eventId"))
-            return None
-        type = e["eventType"]
-        id = UUID(e["eventId"])
-        stream = e["positionStreamId"]
-        sequence = e["positionEventNumber"]
-        return Event(id, type, data, stream, sequence)
+            r = yield from self._fetcher.fetch(uri)
+            js = yield from r.json()
+            page = Page(js, logger)
 
 
 class state(Enum):
@@ -521,19 +595,6 @@ class RedisCounter(EventCounter):
         return "urn:atomicpuppy:"+self._instance_name+":"+stream+":position"
 
 
-class InMemoryAutoIncrementingSingleStreamCounter:
-
-    def __init__(self, stream):
-        self._stream = stream
-        self._last_read = -1
-
-    def __getitem__(self, stream):
-        assert stream == self._stream
-        last = self._last_read
-        self._last_read += 1
-        return last
-
-
 class StreamConfigReader:
 
     _logger = logging.getLogger(__name__)
@@ -559,7 +620,8 @@ class StreamConfigReader:
                                   instance_name=instance,
                                   host=cfg.get("host") or 'localhost',
                                   port=cfg.get("port") or 2113,
-                                  timeout=cfg.get("timeout") or 20)
+                                  timeout=cfg.get("timeout") or 20,
+                                  page_size=cfg.get("page_size") or 20)
 
     def _make_counter(self, cfg, instance):
         counter_config = cfg.get("counter")
@@ -635,8 +697,12 @@ class SubscriptionInfoStore:
         if last_read_for_stream < 0:
             last_read_for_stream = 0
 
-        return 'http://{}:{}/streams/{}/{}/forward/20'.format(
-            self.config.host, self.config.port, stream_name, last_read_for_stream)
+        return 'http://{}:{}/streams/{}/{}/forward/{}'.format(
+            self.config.host,
+            self.config.port,
+            stream_name,
+            last_read_for_stream,
+            self.config.page_size)
 
     def _parse(self, stream_name):
         if '#date#' not in stream_name:

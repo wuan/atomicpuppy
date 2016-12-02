@@ -97,6 +97,12 @@ class When_the_port_is_not_specified:
     def it_should_have_the_correct_port(self):
         assert(self.result.port == 2113)
 
+    def it_should_have_the_correct_page_size(self):
+        assert(self.result.page_size == 20)
+
+    def it_should_have_the_correct_timeout(self):
+        assert(self.result.timeout == 20)
+
 
 class When_the_instance_name_is_not_specified:
 
