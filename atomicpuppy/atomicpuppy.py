@@ -176,7 +176,7 @@ class StreamReader:
     def _walk_forwards(self, prev_uri):
         uri = prev_uri
         while True:
-            self.logger.debug("walking backwards from %s", uri)
+            self.logger.debug("walking forwards from %s", uri)
             r = yield from self._fetcher.fetch(uri)
             js = yield from r.json()
             if js["entries"]:
@@ -187,7 +187,7 @@ class StreamReader:
                 # loop until there's a prev link, otherwise it means
                 # we are at the end or we are fetching an empty page
                 self.logger.debug(
-                    "back-walk completed, new polling uri is %s",
+                    "walk to head completed, new polling uri is %s",
                     uri)
                 self._subscriptions.update_uri(self._stream, uri)
                 break
