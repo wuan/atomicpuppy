@@ -158,7 +158,7 @@ class StreamReader:
                 self.logger.debug(
                     "No last read event, skipping to last page %s",
                     last)
-                yield from self._walk_from_last(last)
+                yield from self._walk_forwards(last)
             else:
                 self.logger.debug(
                     "No last read event, yielding events from this page %s",
@@ -173,7 +173,7 @@ class StreamReader:
         yield from self.seek_to_last_read(js)
 
     @asyncio.coroutine
-    def _walk_from_last(self, prev_uri):
+    def _walk_forwards(self, prev_uri):
         uri = prev_uri
         while True:
             self.logger.debug("walking backwards from %s", uri)
@@ -218,7 +218,7 @@ class StreamReader:
                 yield from self._raise_page_events(js)
                 prev = self._get_link(js, "previous")
                 if(prev):
-                    yield from self._walk_from_last(prev)
+                    yield from self._walk_forwards(prev)
                     return
 
         nxt = self._get_link(js, "next")
