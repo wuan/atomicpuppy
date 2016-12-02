@@ -170,7 +170,7 @@ class StreamReader:
         self.logger.debug("Looking for last read event on page %s", uri)
         r = yield from self._fetcher.fetch(uri)
         js = yield from r.json()
-        yield from self.seek_to_last_read(js)
+        yield from self._seek_to_last_read(js)
 
     @asyncio.coroutine
     def _walk_forwards(self, prev_uri):
@@ -209,7 +209,7 @@ class StreamReader:
                 self._subscriptions.update_sequence(self._stream, evt.sequence)
 
     @asyncio.coroutine
-    def seek_to_last_read(self, js):
+    def _seek_to_last_read(self, js):
         subscription = self._subscriptions.get(self._stream)
         for e in js["entries"]:
             if(e["positionEventNumber"] <= subscription.last_read):
