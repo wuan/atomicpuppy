@@ -17,7 +17,14 @@ import redis
 import requests
 import yaml
 
-from atomicpuppy.errors import HttpClientError, HttpServerError, RejectedMessageException, UrlError
+from atomicpuppy.errors import (
+    HttpClientError,
+    HttpServerError,
+    RejectedMessageException,
+    UrlError,
+    HttpNotFoundError,
+    StreamNotFoundError,
+)
 
 
 SubscriptionConfig = namedtuple('SubscriptionConfig', ['streams',
@@ -362,7 +369,10 @@ class StreamFetcher:
                 )
                 if(response.status == 200):
                     return response
-                if response.status in (404, 408):
+                if response.status == 404:
+                    raise HttpNotFoundError(uri, response.status)
+                if response.status == 408:
+                    # timeout waiting for request
                     raise HttpServerError(uri, response.status)
                 if(response.status >= 400 and response.status <= 499):
                     raise HttpClientError(uri, response.status)
@@ -370,9 +380,14 @@ class StreamFetcher:
                     raise HttpServerError(uri, response.status)
             except ValueError as e:
                 raise UrlError(e)
-            except (aiohttp.errors.ClientError, aiohttp.errors.DisconnectedError, aiohttp.errors.ClientResponseError) as e:
+            except (
+                    aiohttp.errors.ClientError,
+                    aiohttp.errors.DisconnectedError,
+                    aiohttp.errors.ClientResponseError) as e:
                 self.log(e, uri)
                 yield from self.sleep(s)
+            except HttpNotFoundError as e:
+                raise
             except HttpServerError as e:
                 self.log(e, uri)
                 yield from self.sleep(s)

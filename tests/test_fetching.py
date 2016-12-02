@@ -726,10 +726,10 @@ class When_we_receive_a_404_range_error(StreamReaderContext):
                     self._reader.start_consuming()
                 )
 
-    def it_should_log_a_single_warning(self):
+    def it_should_log_an_exception(self):
         assert(
-            any(r.msg == "Error occurred while requesting %s"
-                and r.levelno == logging.WARNING
+            any(r.msg == "Received bad http response with status %d from %s"
+                and r.levelno == logging.ERROR
                 for r in self._log._logs))
 
 
