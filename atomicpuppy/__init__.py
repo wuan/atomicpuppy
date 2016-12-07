@@ -1,6 +1,6 @@
 from .atomicpuppy import (
-    Counter,
     Event,
+    EventCounter,
     EventPublisher,
     EventRaiser,
     EventStoreJsonEncoder,
@@ -99,8 +99,8 @@ class AtomicPuppy:
 
 __all__ = [
     AtomicPuppy,
-    Counter,
     Event,
+    EventCounter,
     EventFinder,
     EventPublisher,
     EventStoreJsonEncoder,
