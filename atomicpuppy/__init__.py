@@ -6,9 +6,18 @@ from .atomicpuppy import (
     EventPublisher,
     EventStoreJsonEncoder,
     SubscriptionInfoStore,
-    RedisCounter
+    RedisCounter,
+    Counter
 )
-from .errors import *
+from .errors import (
+    FatalError,
+    UrlError,
+    HttpClientError,
+    HttpNotFoundError,
+    HttpServerError,
+    StreamNotFoundError,
+    RejectedMessageException
+)
 
 import asyncio
 
@@ -89,3 +98,21 @@ class AtomicPuppy:
         for s in self.readers:
             s.stop()
         self._messageProcessor.stop()
+
+
+__all__ = [
+    AtomicPuppy,
+    Counter,
+    Event,
+    EventFinder,
+    EventPublisher,
+    EventStoreJsonEncoder,
+    FatalError,
+    HttpClientError,
+    HttpNotFoundError,
+    HttpServerError,
+    RedisCounter,
+    RejectedMessageException,
+    StreamNotFoundError,
+    UrlError,
+]
