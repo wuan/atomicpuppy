@@ -311,6 +311,10 @@ class StreamReader:
                 yield from self._walk_forwards(prev)
                 return
 
+        # TODO: when we're on HEAD and have processed all events this starts
+        # seeking back towards last (the oldest event).  This is unintentional
+        # and we should stop doing it.  Conceivably this might be hiding other
+        # bugs so needs a bit of care to fix...
         nxt = page.get_link("next")
         if(nxt):
             yield from self.seek_on_page(nxt)
