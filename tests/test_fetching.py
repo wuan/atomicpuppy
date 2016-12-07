@@ -11,7 +11,7 @@ from freezegun import freeze_time
 from atomicpuppy.atomicpuppy import (
     StreamReader, SubscriptionInfoStore, SubscriptionConfig
 )
-from atomicpuppy import EventFinder
+from atomicpuppy import EventFinder, StreamNotFoundError
 from .fakehttp import FakeHttp, SpyLog
 from .fakes import FakeRedisCounter
 
@@ -19,45 +19,162 @@ from .fakes import FakeRedisCounter
 SCRIPT_PATH = os.path.dirname(__file__)
 
 
-class When_a_stream_contains_multiple_events:
+class EventFinderContext:
 
-    _host = 'eventstore.local'
-    _port = 2113
-
-    def given_two_feeds(self):
-        logging.basicConfig(filename='example.log', level=logging.DEBUG)
-        self._loop = asyncio.new_event_loop()
+    def given_fake_http_and_an_event_loop(self):
+        self.loop = asyncio.new_event_loop()
+        # restore global event loop unset by line above, I think?
         asyncio.set_event_loop(None)
+        self.http = FakeHttp(self.loop)
 
-        self.http = FakeHttp(self._loop)
-        stream_uri = (
-            'http://eventstore.local:2113/streams/otherstream/0/forward/20')
-        self.http.registerJsonUri(
-            stream_uri,
-            SCRIPT_PATH + '/responses/two-events-otherstream.json')
-        # It should stop once it finds the matching event, so fail if it does
-        # not
-        self.http.registerNoMoreRequests(stream_uri)
-
-    def because_we_call_find_forwards(self):
+    def make_and_run_finder(
+            self,
+            sought_event_type='other_event',
+            stream_to_look_in='otherstream',
+            expect_exceptions=()):
         config = {
             'streams': [],
             'host': self._host,
             'port': self._port,
-            'instance': 'eventstore_reader'
+            'instance': 'eventstore_reader',
+            'page_size': 2
         }
         mock = self.http.getMock()
         def predicate(evt):
-            return evt.type == 'other_event'
-        ap_loop = EventFinder({'atomicpuppy': config}, self._loop)
+            return evt.type == sought_event_type
+        finder = EventFinder({'atomicpuppy': config}, self.loop)
+        coro = finder.find_backwards(stream_to_look_in, predicate)
         with patch('aiohttp.request', new=mock):
-            self.evt = self._loop.run_until_complete(
-                ap_loop.find_forwards('otherstream', predicate))
+            self._log = SpyLog()
+            with(self._log.capture()):
+                try:
+                    self.evt = self.loop.run_until_complete(coro)
+                except expect_exceptions as exc:
+                    self.exc = exc
+
+
+class When_we_find_an_event_in_a_stream_containing_multiple_events(
+        EventFinderContext):
+
+    _host = 'eventstore.local'
+    _port = 2113
+
+    def given_two_events_where_only_the_second_is_sought(self):
+        head_uri = (
+            'http://eventstore.local:2113/streams/otherstream/head/backward/2')
+        stream = SCRIPT_PATH + '/responses/two-events-otherstream.json'
+        self.http.registerJsonUri(head_uri, stream)
+        self.http.registerErrorWhenRegisteredRequestsExhausted()
+
+    def because_we_call_find_backwards(self):
+        self.make_and_run_finder(sought_event_type='other_event')
 
     def it_should_fetch_the_first_matching_event(self):
         assert self.evt.stream == 'otherstream'
         assert self.evt.type == 'other_event'
         assert self.evt.data == {'spam': '1'}
+
+
+class When_we_find_an_event_in_a_stream_with_two_pages(EventFinderContext):
+
+    _host = 'localhost'
+    _port = 2113
+
+    def given_two_pages_where_the_sought_event_is_only_on_the_second(self):
+        self.http.registerJsonUris({
+            'http://localhost:2113/streams/more_spam_stream/head/backward/2':
+              SCRIPT_PATH + '/responses/two-page-find-backwards/head.json',
+            'http://localhost:2113/streams/more_spam_stream/0/backward/2':
+              SCRIPT_PATH + '/responses/two-page-find-backwards/next.json',
+        })
+        self.http.registerErrorWhenRegisteredRequestsExhausted()
+
+    def because_we_call_find_backwards(self):
+        self.make_and_run_finder(
+            sought_event_type='sought_event',
+            stream_to_look_in='more_spam_stream')
+
+    def it_should_fetch_the_first_matching_event(self):
+        assert self.evt.stream == 'more_spam_stream'
+        assert self.evt.type == 'sought_event'
+        assert self.evt.data == {'spam': '1'}
+
+
+class When_the_sought_event_is_not_there_two_pages(EventFinderContext):
+
+    _host = 'localhost'
+    _port = 2113
+
+    def given_two_pages_where_the_sought_event_is_only_on_the_second(self):
+        self.http.registerJsonUris({
+            'http://localhost:2113/streams/more_spam_stream/head/backward/2':
+              SCRIPT_PATH + '/responses/two-page-find-backwards/head.json',
+            'http://localhost:2113/streams/more_spam_stream/0/backward/2':
+              SCRIPT_PATH + '/responses/two-page-find-backwards/next.json',
+        })
+        self.http.registerErrorWhenRegisteredRequestsExhausted()
+
+    def because_we_call_find_backwards(self):
+        self.make_and_run_finder(
+            sought_event_type='nonexistent_sought_event',
+            stream_to_look_in='more_spam_stream')
+
+    def it_should_return_None(self):
+        assert self.evt is None
+
+    def it_should_log_that_it_couldnt_be_found(self):
+        for r in self._log._logs:
+            print(r.msg)
+        assert(any(r.msg.startswith("No matching event found")
+                   and r.levelno == logging.WARNING
+                   for r in self._log._logs))
+
+
+class When_the_sought_event_is_not_there_one_page(EventFinderContext):
+
+    _host = 'eventstore.local'
+    _port = 2113
+
+    def given_two_events_on_one_page(self):
+        self.http.registerJsonUri(
+            'http://eventstore.local:2113/streams/otherstream/head/backward/2',
+            SCRIPT_PATH + '/responses/two-events-otherstream.json')
+        self.http.registerErrorWhenRegisteredRequestsExhausted()
+
+    def because_we_call_find_backwards(self):
+        self.make_and_run_finder(
+            sought_event_type='nonexistent_sought_event',
+            stream_to_look_in='otherstream')
+
+    def it_should_return_None(self):
+        assert self.evt is None
+
+    def it_should_log_that_it_couldnt_be_found(self):
+        for r in self._log._logs:
+            print(r.msg)
+        assert(any(r.msg.startswith("No matching event found")
+                   and r.levelno == logging.WARNING
+                   for r in self._log._logs))
+
+
+class When_the_sought_stream_is_not_there(EventFinderContext):
+
+    _host = 'eventstore.local'
+    _port = 2113
+
+    def given_two_events_on_one_page(self):
+        self.http.register404(
+            'http://eventstore.local:2113/streams/otherstream/head/backward/2'
+        )
+
+    def because_we_call_find_backwards(self):
+        self.make_and_run_finder(
+            sought_event_type='nonexistent_sought_event',
+            stream_to_look_in='otherstream',
+            expect_exceptions=(StreamNotFoundError, ))
+
+    def it_should_raise(self):
+        assert isinstance(self.exc, StreamNotFoundError)
 
 
 class StreamReaderContext:
@@ -100,7 +217,8 @@ class StreamReaderContext:
             instance_name='foo',
             host=self._host,
             port=self._port,
-            timeout=20)
+            timeout=20,
+            page_size=20)
 
         subscriptions_store = SubscriptionInfoStore(config, self.counter)
         if last_read != -1:
@@ -726,10 +844,10 @@ class When_we_receive_a_404_range_error(StreamReaderContext):
                     self._reader.start_consuming()
                 )
 
-    def it_should_log_a_single_warning(self):
+    def it_should_log_an_exception(self):
         assert(
-            any(r.msg == "Error occurred while requesting %s"
-                and r.levelno == logging.WARNING
+            any(r.msg == "Received bad http response with status %d from %s"
+                and r.levelno == logging.ERROR
                 for r in self._log._logs))
 
 

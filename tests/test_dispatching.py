@@ -193,3 +193,46 @@ class When_the_callback_is_asynchronous:
 
     def it_should_have_exhausted_the_callback(self):
         assert self.callback_exhausted[0]
+
+
+class When_an_asynchronous_callback_fails:
+
+    def given_an_event_raiser(self):
+        self._log = SpyLog()
+        self._loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(None)
+        self.message_id = uuid4()
+        self.queue = asyncio.Queue(loop=self._loop)
+        events = {}
+        self.callback_exhausted = [False]
+
+        class Failure(Exception):
+            pass
+
+        @asyncio.coroutine
+        def async_callback(evt):
+            self.event_raiser.stop()
+            yield
+            raise Failure()
+            return
+
+        self.event_raiser = EventRaiser(
+            queue=self.queue,
+            counter=events,
+            callback=async_callback,
+            loop=self._loop
+        )
+
+    @asyncio.coroutine
+    def send_message(self, e):
+        yield from self.queue.put(e)
+
+    def because_we_process_a_message(self):
+        with(self._log.capture()):
+            msg = Event(self.message_id, "message-type", {}, "stream", 2)
+            asyncio.async(self.send_message(msg), loop=self._loop)
+            self._loop.run_until_complete(self.event_raiser.start())
+
+    def the_exception_should_be_logged(self):
+        m = "Failed to process message "
+        assert(any(r.message.startswith(m) for r in self._log.errors))
