@@ -23,7 +23,6 @@ And the links on each page are named like this:
             <previous      ...          next>
 """
 
-
 from collections import namedtuple, defaultdict
 from concurrent.futures import TimeoutError
 from enum import Enum
