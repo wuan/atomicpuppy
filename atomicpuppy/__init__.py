@@ -6,8 +6,10 @@ from .atomicpuppy import (
     EventStoreJsonEncoder,
     RedisCounter,
     StreamConfigReader,
+    StreamFetcher,
     StreamReader,
     SubscriptionInfoStore,
+    EventFinder as EventFinder_,
 )
 from .errors import (
     FatalError,
@@ -33,22 +35,17 @@ class EventFinder:
 
     @asyncio.coroutine
     def find_backwards(self, stream, predicate, predicate_label='predicate'):
-        # This import is here to avoid polluting the package namespace.
-        # TODO: figure out which other names should be removed from the package
-        # namespace or put in __all__ and do so (I guess only AtomicPuppy,
-        # EventFinder, and RedisCounter are intended to be exposed?)
-        import atomicpuppy.atomicpuppy
         instance_name = (
             self._config.instance_name + ' find_backwards {}'.format(stream)
         )
-        fetcher = atomicpuppy.atomicpuppy.StreamFetcher(
+        fetcher = StreamFetcher(
             None, loop=self._loop, nosleep=False, timeout=self._config.timeout)
         head_uri = 'http://{}:{}/streams/{}/head/backward/{}'.format(
             self._config.host,
             self._config.port,
             stream,
             self._config.page_size)
-        finder = atomicpuppy.atomicpuppy.EventFinder(
+        finder = EventFinder_(
             fetcher=fetcher,
             stream_name=stream,
             loop=self._loop,
