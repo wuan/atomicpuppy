@@ -409,15 +409,23 @@ class StreamFetcher:
                 exc_info=True)
             self._exns.add(type(e))
 
+    def set_result(self, fut, result):
+        """Helper setting the result only if the future was not cancelled."""
+        if fut.cancelled():
+            return
+        fut.set_result(result)
+
     @asyncio.coroutine
     def sleep(self, delay):
         if(self._nosleep):
             return
         self._sleep = asyncio.futures.Future(loop=self._loop)
+
         self._sleep._loop.call_later(
             delay,
-            self._sleep._set_result_unless_cancelled,
-            None)
+            self.set_result,
+            self._sleep, None)
+
         self._log.debug("retrying fetch in %d seconds", delay)
         yield from self._sleep
 
