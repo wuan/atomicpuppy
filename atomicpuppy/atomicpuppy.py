@@ -61,11 +61,6 @@ SubscriptionConfig = namedtuple('SubscriptionConfig', ['streams',
                                                        'page_size'])
 
 
-# this function moved from the futures class to the module at some point, 
-# so we need to know where to look for it.
-_SET_RESULT_UNLESS_CANCELLED_MODULE = hasattr(asyncio.futures, '_set_result_unless_cancelled')
-
-
 class Event:
 
     def __init__(self, id, type, data, stream, sequence):
@@ -414,22 +409,23 @@ class StreamFetcher:
                 exc_info=True)
             self._exns.add(type(e))
 
+    def set_result(self, fut, result):
+        """Helper setting the result only if the future was not cancelled."""
+        if fut.cancelled():
+            return
+        fut.set_result(result)
+
     @asyncio.coroutine
     def sleep(self, delay):
         if(self._nosleep):
             return
         self._sleep = asyncio.futures.Future(loop=self._loop)
 
-        if _SET_RESULT_UNLESS_CANCELLED_MODULE:
-            self._sleep._loop.call_later(
-                delay,
-                asyncio.futures._set_result_unless_cancelled,
-                self._sleep, None)
-        else:    
-             self._sleep._loop.call_later(
-                delay,
-                self._sleep._set_result_unless_cancelled,
-                None)
+        self._sleep._loop.call_later(
+            delay,
+            self.set_result,
+            self._sleep, None)
+
         self._log.debug("retrying fetch in %d seconds", delay)
         yield from self._sleep
 
