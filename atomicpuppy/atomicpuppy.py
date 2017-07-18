@@ -160,6 +160,8 @@ class Page:
                 evt = self._make_event(e)
                 if evt is not None:
                     yield evt
+            else:
+                self._logger.debug("Skipping (already read) %s", e)
 
     def iter_events_matching(self, predicate):
         if not self.is_empty():
@@ -288,13 +290,17 @@ class StreamReader:
 
     def _fetch_page(self, uri):
         r = yield from self._fetcher.fetch(uri)
+        self.logger.debug("Fetched %s", uri)
         js = yield from r.json()
         return Page(js, self.logger)
 
     @asyncio.coroutine
     def _raise_page_events(self, page):
         subscription = self._subscriptions.get(self._stream)
-        for evt in page.iter_events_since(subscription.last_read):
+        last_read = subscription.last_read
+        self.logger.debug("Raising events on %s since %s", self._stream, last_read)
+        for evt in page.iter_events_since(last_read):
+            self.logger.debug("Raising %s", evt)
             yield from self._queue.put(evt)
             self._subscriptions.update_sequence(self._stream, evt.sequence)
 
@@ -309,6 +315,8 @@ class StreamReader:
             if prev:
                 yield from self._walk_forwards(prev)
                 return
+            else:
+                self.logger.debug("No previous link")
 
         # TODO: when we're on HEAD and have processed all events this starts
         # seeking back towards last (the oldest event).  This is unintentional
@@ -316,6 +324,7 @@ class StreamReader:
         # bugs so needs a bit of care to fix...
         nxt = page.get_link("next")
         if(nxt):
+            self.logger.debug('Seeking back to %s', nxt)
             yield from self.seek_on_page(nxt)
 
 
@@ -521,7 +530,8 @@ class EventRaiser:
                                                   loop=self._loop)
                 if not msg:
                     continue
-                yield from _ensure_coroutine_function(self._callback)(msg)
+                coro = _ensure_coroutine_function(self._callback)
+                yield from coro(msg)
                 try:
                     self._counter[msg.stream] = msg.sequence
                 except pybreaker.CircuitBreakerError:
@@ -599,6 +609,7 @@ class RedisCounter(EventCounter):
 
     @counter_circuit_breaker
     def __setitem__(self, stream, val):
+        self._logger.debug("Setting redis pointer for %s to %s", stream, val)
         key = self._key(stream)
         self._redis.set(key, val)
 

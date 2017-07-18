@@ -1,13 +1,12 @@
 from setuptools import setup, find_packages
 
 install_requires = [
-    "aiohttp>=0.15.3",
-    "asyncio==3.4.3",
+    "aiohttp==1.3.5",
     "chardet==2.3.0",
     "gevent>=1.1.1",
-    "greenlet==0.4.5",
+    "greenlet==0.4.12",
     "pybreaker==0.2.3",
-    "PyYAML==3.11",
+    "PyYAML==3.12",
     "redis==2.10.3",
     "retrying==1.3.3",
     "requests==2.7.0"

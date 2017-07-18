@@ -61,3 +61,11 @@ To run the tests:
 2. Make sure you have the Python 3.5 headers installed (on Ubuntu this is `apt-get install python3.5-dev`)
 3. `pip install -r test-requirements.txt` from the root folder of the repository
 4. Run `tox` from the root folder of the repository
+
+
+## About python version
+
+There is a bug in asyncio for python3.4 that was fixed in other versions.
+This is the bug report: https://bugs.python.org/issue23812
+Because of that we are dropping support for python3.4 and we recommend to use
+python3.6.
