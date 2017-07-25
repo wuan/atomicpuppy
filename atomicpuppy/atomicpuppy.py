@@ -247,7 +247,7 @@ class StreamReader:
                 subscription.uri)
             yield from self.seek_on_page(subscription.uri)
         else:
-            page = yield from self._fetch_page(subscription.uri)
+            page = yield from self._fetcher.fetch(subscription.uri)
             last = page.get_link("last")
             if(last):
                 self.logger.debug(
@@ -263,7 +263,7 @@ class StreamReader:
     @asyncio.coroutine
     def seek_on_page(self, uri):
         self.logger.debug("Looking for last read event on page %s", uri)
-        page = yield from self._fetch_page(uri)
+        page = yield from self._fetcher.fetch(uri)
         yield from self._seek_to_last_read(page)
 
     @asyncio.coroutine
@@ -271,7 +271,7 @@ class StreamReader:
         uri = prev_uri
         while True:
             self.logger.debug("walking forwards from %s", uri)
-            page = yield from self._fetch_page(uri)
+            page = yield from self._fetcher.fetch(uri)
             if not page.is_empty():
                 self.logger.debug("raising events from page %s", uri)
                 yield from self._raise_page_events(page)
@@ -288,11 +288,6 @@ class StreamReader:
             self.logger.debug("Continuing to previous page %s", prev_uri)
             uri = prev_uri
 
-    def _fetch_page(self, uri):
-        r = yield from self._fetcher.fetch(uri)
-        self.logger.debug("Fetched %s", uri)
-        js = yield from r.json()
-        return Page(js, self.logger)
 
     @asyncio.coroutine
     def _raise_page_events(self, page):
@@ -337,8 +332,7 @@ class EventFinder:
         self._head_uri = head_uri
         self._logger = logging.getLogger('atomicpuppy.finder@{}/{}'.format(instance_name, stream_name))
 
-    @asyncio.coroutine
-    def find_backwards(self, stream_name, predicate, predicate_label='predicate'):
+    async def find_backwards(self, stream_name, predicate, predicate_label='predicate'):
         """Return first event matching predicate, or None if none exists.
 
         Note: 'backwards', both here and in Event Store, means 'towards the
@@ -348,11 +342,9 @@ class EventFinder:
         logger.info('Fetching first matching event')
         uri = self._head_uri
         try:
-            r = yield from self._fetcher.fetch(uri)
+            page = await self._fetcher.fetch(uri)
         except HttpNotFoundError as e:
             raise StreamNotFoundError() from e
-        js = yield from r.json()
-        page = Page(js, logger)
         while True:
             evt = next(page.iter_events_matching(predicate), None)
             if evt is not None:
@@ -363,9 +355,7 @@ class EventFinder:
                 logger.warning("No matching event found")
                 return None
 
-            r = yield from self._fetcher.fetch(uri)
-            js = yield from r.json()
-            page = Page(js, logger)
+            page = await self._fetcher.fetch(uri)
 
 
 class state(Enum):
@@ -386,6 +376,7 @@ class StreamFetcher:
         self._nosleep = nosleep
         self._exns = set()
         self._timeout = timeout
+        self.session = aiohttp.ClientSession(read_timeout=timeout, conn_timeout=timeout, raise_for_status=True, loop=loop)
 
     def stop(self):
         self._running = False
@@ -438,8 +429,7 @@ class StreamFetcher:
         self._log.debug("retrying fetch in %d seconds", delay)
         yield from self._sleep
 
-    @asyncio.coroutine
-    def fetch(self, uri):
+    async def fetch(self, uri):
         sleep_times = self.sleeps(uri)
         self._exns = set()
         self._state = state.green
@@ -447,47 +437,33 @@ class StreamFetcher:
             headers = {"Accept": "application/json"}
             params = {"embed": "body"}
             try:
-                response = yield from asyncio.wait_for(
-                    aiohttp.request(
-                        'GET', uri,
-                        params=params,
-                        headers=headers,
-                        loop=self._loop,
-                        connector=aiohttp.TCPConnector(
-                            resolve=True,
-                            loop=self._loop,
-                        )
-                    ),
-                    self._timeout,
-                    loop=self._loop
-                )
-                if(response.status == 200):
-                    return response
-                if response.status == 404:
-                    raise HttpNotFoundError(uri, response.status)
-                if response.status == 408:
-                    # timeout waiting for request
-                    raise HttpServerError(uri, response.status)
-                if(response.status >= 400 and response.status <= 499):
-                    raise HttpClientError(uri, response.status)
-                if(response.status >= 500 and response.status <= 599):
-                    raise HttpServerError(uri, response.status)
+                async with self.session.get(uri, params=params, headers=headers) as response:
+                    # 200 OK? Return the Page
+                    if(response.status == 200):
+                        self._log.debug("Fetched %s", uri)
+                        js = await response.json()
+                        return Page(js, self._log)
+            # Wonky URI? Raise to caller
             except ValueError as e:
                 raise UrlError(e)
-            except (
-                    aiohttp.errors.ClientError,
-                    aiohttp.errors.DisconnectedError,
-                    aiohttp.errors.ClientResponseError) as e:
+            # Error from the HTTP response?
+            except aiohttp.ClientResponseError as e:
                 self.log(e, uri)
-                yield from self.sleep(s)
-            except HttpNotFoundError as e:
-                raise
-            except HttpServerError as e:
+                # For a 404, raise HttpNotFound
+                if e.code == 404:
+                    raise HttpNotFoundError(uri, 404)
+                # For a client error other than a timeout, raise HttpClientError
+                # Timeouts should log and sleep
+                if e.code < 500 and e.code != 408:
+                    raise HttpClientError(uri, e.code)
+            # Other connection errors and malformed payloads just log and sleep
+            except (aiohttp.ClientError) as e:
                 self.log(e, uri)
-                yield from self.sleep(s)
+            # Http timeout? Log and sleep
             except TimeoutError as e:
                 self.log(e, uri)
-                yield from self.sleep(s)
+
+            await self.sleep(s)
 
 
 def _ensure_coroutine_function(func):
