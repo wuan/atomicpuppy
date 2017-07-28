@@ -7,6 +7,7 @@ install_requires = [
     "greenlet>=0.4.12",
     "pybreaker>=0.2.3",
     "PyYAML>=3.12",
+    "redis==2.10.5",
     "retrying>=1.3.3",
     "requests>=2.7.0"
 ]
@@ -24,7 +25,7 @@ extras = {
 
 setup(
     name="AtomicPuppy",
-    version="0.4.0",
+    version="0.4.1",
     packages=find_packages(),
     dependency_links=[
         "git+https://github.com/OddBloke/HTTPretty.git@f899d1bda8234658c2cec5aab027cb5b7c42203c#egg=HTTPretty"
