@@ -25,7 +25,7 @@ extras = {
 
 setup(
     name="AtomicPuppy",
-    version="0.4.1",
+    version="0.5.0",
     packages=find_packages(),
     dependency_links=[
         "git+https://github.com/OddBloke/HTTPretty.git@f899d1bda8234658c2cec5aab027cb5b7c42203c#egg=HTTPretty"
@@ -34,7 +34,6 @@ setup(
     install_requires=install_requires,
     tests_require=tests_require,
     url='https://github.com/madedotcom/atomicpuppy',
-    download_url='https://github.com/madedotcom/atomicpuppy/tarball/0.3.pre',
     description='A service-activator component for eventstore',
     author='Bob Gregory',
     author_email='bob@made.com',
