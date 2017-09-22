@@ -341,21 +341,22 @@ class EventFinder:
         logger = self._logger.getChild(predicate_label)
         logger.info('Fetching first matching event')
         uri = self._head_uri
-        try:
-            page = await self._fetcher.fetch(uri)
-        except HttpNotFoundError as e:
-            raise StreamNotFoundError() from e
-        while True:
-            evt = next(page.iter_events_matching(predicate), None)
-            if evt is not None:
-                return evt
+        async with self._fetcher:
+            try:
+                page = await self._fetcher.fetch(uri)
+            except HttpNotFoundError as e:
+                raise StreamNotFoundError() from e
+            while True:
+                evt = next(page.iter_events_matching(predicate), None)
+                if evt is not None:
+                    return evt
 
-            uri = page.get_link("next")
-            if uri is None:
-                logger.warning("No matching event found")
-                return None
+                uri = page.get_link("next")
+                if uri is None:
+                    logger.warning("No matching event found")
+                    return None
 
-            page = await self._fetcher.fetch(uri)
+                page = await self._fetcher.fetch(uri)
 
 
 class state(Enum):
@@ -465,6 +466,22 @@ class StreamFetcher:
 
             await self.sleep(s)
 
+    def close(self):
+        self.session.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    @asyncio.coroutine
+    def __aenter__(self):
+        return self
+
+    @asyncio.coroutine
+    def __aexit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
 def _ensure_coroutine_function(func):
     """Return a coroutine function.

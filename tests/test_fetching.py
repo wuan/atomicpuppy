@@ -35,9 +35,15 @@ class FakeClientSession:
 
     def __init__(self, fake_http):
         self.http = fake_http
+        self.closed = False
 
     def get(self, uri, **kwargs):
+        assert not self.closed
         return FakeRequestContext(self.http.respond(uri))
+
+    def close(self):
+        self.closed = True
+
 
 class EventFinderContext:
 
@@ -73,6 +79,7 @@ class EventFinderContext:
                     self.evt = self.loop.run_until_complete(coro)
                 except expect_exceptions as exc:
                     self.exc = exc
+            assert mock.return_value.closed
 
 
 class When_we_find_an_event_in_a_stream_containing_multiple_events(
