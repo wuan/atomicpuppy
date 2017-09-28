@@ -160,8 +160,6 @@ class Page:
                 evt = self._make_event(e)
                 if evt is not None:
                     yield evt
-            else:
-                self._logger.debug("Skipping (already read) %s", e)
 
     def iter_events_matching(self, predicate):
         if not self.is_empty():
@@ -201,8 +199,8 @@ class Page:
 
 class StreamReader:
 
-    def __init__(self, queue, stream_name, loop, instance_name, subscriptions_store, timeout, nosleep=False):
-        self._fetcher = StreamFetcher(None, loop=loop, nosleep=nosleep, timeout=timeout)
+    def __init__(self, queue, stream_name, loop, instance_name, subscriptions_store, session, nosleep=False):
+        self._fetcher = StreamFetcher(None, loop=loop, nosleep=nosleep, session=session)
         self._queue = queue
         self._loop = loop
         self._stream = stream_name
@@ -341,22 +339,21 @@ class EventFinder:
         logger = self._logger.getChild(predicate_label)
         logger.info('Fetching first matching event')
         uri = self._head_uri
-        async with self._fetcher:
-            try:
-                page = await self._fetcher.fetch(uri)
-            except HttpNotFoundError as e:
-                raise StreamNotFoundError() from e
-            while True:
-                evt = next(page.iter_events_matching(predicate), None)
-                if evt is not None:
-                    return evt
+        try:
+            page = await self._fetcher.fetch(uri)
+        except HttpNotFoundError as e:
+            raise StreamNotFoundError() from e
+        while True:
+            evt = next(page.iter_events_matching(predicate), None)
+            if evt is not None:
+                return evt
 
-                uri = page.get_link("next")
-                if uri is None:
-                    logger.warning("No matching event found")
-                    return None
+            uri = page.get_link("next")
+            if uri is None:
+                logger.warning("No matching event found")
+                return None
 
-                page = await self._fetcher.fetch(uri)
+            page = await self._fetcher.fetch(uri)
 
 
 class state(Enum):
@@ -367,7 +364,7 @@ class state(Enum):
 
 class StreamFetcher:
 
-    def __init__(self, policy, loop, timeout, nosleep=False):
+    def __init__(self, policy, loop, session, nosleep=False):
         self._policy = policy
         self._loop = loop
         self._log = logging.getLogger(__name__)
@@ -376,8 +373,7 @@ class StreamFetcher:
         self._sleep = None
         self._nosleep = nosleep
         self._exns = set()
-        self._timeout = timeout
-        self.session = aiohttp.ClientSession(read_timeout=timeout, conn_timeout=timeout, raise_for_status=True, loop=loop)
+        self.session = session
 
     def stop(self):
         self._running = False
@@ -465,23 +461,6 @@ class StreamFetcher:
                 self.log(e, uri)
 
             await self.sleep(s)
-
-    def close(self):
-        self.session.close()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
-
-    @asyncio.coroutine
-    def __aenter__(self):
-        return self
-
-    @asyncio.coroutine
-    def __aexit__(self, exc_type, exc_val, exc_tb):
-        self.close()
 
 def _ensure_coroutine_function(func):
     """Return a coroutine function.

@@ -22,6 +22,7 @@ from .errors import (
 )
 
 import asyncio
+import aiohttp
 
 
 class EventFinder:
@@ -33,27 +34,32 @@ class EventFinder:
         self._config = StreamConfigReader().read(cfg_file)
         self._loop = loop or asyncio.get_event_loop()
 
-    @asyncio.coroutine
-    def find_backwards(self, stream, predicate, predicate_label='predicate'):
-        instance_name = (
-            self._config.instance_name + ' find_backwards {}'.format(stream)
-        )
-        fetcher = StreamFetcher(
-            None, loop=self._loop, nosleep=False, timeout=self._config.timeout)
-        head_uri = 'http://{}:{}/streams/{}/head/backward/{}'.format(
-            self._config.host,
-            self._config.port,
-            stream,
-            self._config.page_size)
-        finder = EventFinder_(
-            fetcher=fetcher,
-            stream_name=stream,
-            loop=self._loop,
-            instance_name=instance_name,
-            head_uri=head_uri,
-        )
-        return (yield from
-                finder.find_backwards(stream, predicate, predicate_label))
+    async def find_backwards(self, stream, predicate, predicate_label='predicate'):
+        async with aiohttp.ClientSession(
+                read_timeout=self._config.timeout,
+                conn_timeout=self._config.timeout,
+                raise_for_status=True,
+                loop=self._loop) as session:
+
+            instance_name = (
+                self._config.instance_name + ' find_backwards {}'.format(stream)
+            )
+            fetcher = StreamFetcher(
+                None, loop=self._loop, nosleep=False, session=session)
+            head_uri = 'http://{}:{}/streams/{}/head/backward/{}'.format(
+                self._config.host,
+                self._config.port,
+                stream,
+                self._config.page_size)
+            finder = EventFinder_(
+                fetcher=fetcher,
+                stream_name=stream,
+                loop=self._loop,
+                instance_name=instance_name,
+                head_uri=head_uri,
+            )
+            result = await finder.find_backwards(stream, predicate, predicate_label)
+            return result
 
 
 class AtomicPuppy:
@@ -66,6 +72,11 @@ class AtomicPuppy:
         self.callback = callback
         self._loop = loop or asyncio.get_event_loop()
         self._queue = asyncio.Queue(maxsize=20, loop=self._loop)
+        self.session = aiohttp.ClientSession(
+                read_timeout=self.config.timeout,
+                conn_timeout=self.config.timeout,
+                raise_for_status=True,
+                loop=self._loop)
 
     def start(self, run_once=False):
         c = self.counter = self.config.counter_factory()
@@ -81,7 +92,7 @@ class AtomicPuppy:
                 loop=self._loop,
                 instance_name=self.config.instance_name,
                 subscriptions_store=subscription_info_store,
-                timeout=self.config.timeout)
+                session=self.session)
             for s in self.config.streams
         ]
         self.tasks = [s.start_consuming(once=run_once) for s in self.readers]
@@ -92,6 +103,7 @@ class AtomicPuppy:
         return asyncio.gather(*self.tasks, loop=self._loop)
 
     def stop(self):
+        self.session.close()
         for s in self.readers:
             s.stop()
         self._messageProcessor.stop()

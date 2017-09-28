@@ -28,6 +28,7 @@ class FakeRequestContext (_RequestContextManager):
 
     async def __aenter__(self):
          self._resp = await self.coro
+         print(self.coro)
          self._resp.raise_for_status()
          return self._resp
 
@@ -43,6 +44,12 @@ class FakeClientSession:
 
     def close(self):
         self.closed = True
+
+    async def __aenter__(self, *args):
+        return self
+
+    async def __aexit__(self, *args):
+        self.close()
 
 
 class EventFinderContext:
@@ -222,13 +229,12 @@ class StreamReaderContext:
         asyncio.set_event_loop(None)
 
         self.http = FakeHttp(self._loop)
+        self.session = FakeClientSession(self.http)
         self._queue = asyncio.Queue(loop=self._loop)
 
     def subscribe_and_run(self, stream, last_read=-1, nosleep=False):
-        with patch("aiohttp.ClientSession") as mock:
-            mock.return_value = FakeClientSession(self.http)
-            self._reader = self.subscribeTo(stream, last_read, nosleep)
-            self.run_the_reader()
+        self._reader = self.subscribeTo(stream, last_read, nosleep)
+        self.run_the_reader()
 
     def run_the_reader(self):
         with self._log.capture():
@@ -259,7 +265,7 @@ class StreamReaderContext:
             loop=self._loop,
             instance_name='foo',
             subscriptions_store=subscriptions_store,
-            timeout=config.timeout,
+            session=self.session,
             nosleep=nosleep)
         return self._reader
 
@@ -502,13 +508,10 @@ class When_events_are_added_after_the_first_run(StreamReaderContext):
             SCRIPT_PATH + '/responses/new-events/head_prev2_next_prev_prev.json')
 
     def because_we_run_the_reader_three_times(self):
-        with patch("aiohttp.ClientSession") as mock:
-            mock.return_value = FakeClientSession(self.http)
-            self._reader = self.subscribeTo('stock', -1)
-
-            self.run_the_reader()
-            self.run_the_reader()
-            self.run_the_reader()
+        self._reader = self.subscribeTo('stock', -1)
+        self.run_the_reader()
+        self.run_the_reader()
+        self.run_the_reader()
 
     def it_should_have_read_all_the_events(self):
         assert(len(self.the_events) == 24)
@@ -575,8 +578,17 @@ context mismatch. In that case, we should just end the loop.
 
 class When_a_valueerror_occurs_during_fetch(StreamReaderContext):
 
-    def given_a_malformed_port(self):
-        self._port = "tawny"
+    def given_a_malformed_uri(self):
+        # This test used to create a broke URI but now we fake the
+        # ClientSession so we need to explicitly raise the error
+        self.http.registerCallbacksUri(
+            'http://eventstore.local:2113/streams/my-stream/1/forward/20',
+            [
+                lambda: exec('raise ValueError()')
+            ]
+        )
+
+
 
     # note that we run with a real event loop, and don't explicitly
     # call stop. The exception will stop the loop.
