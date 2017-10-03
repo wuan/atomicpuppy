@@ -32,6 +32,7 @@ class FakeRequestContext (_RequestContextManager):
          self._resp.raise_for_status()
          return self._resp
 
+
 class FakeClientSession:
 
     def __init__(self, fake_http):
@@ -536,7 +537,6 @@ class When_events_are_added_after_the_first_run(StreamReaderContext):
         return self._the_events
 
 
-
 class When_reading_from_a_category_projection(StreamReaderContext):
 
     _the_events = []
@@ -858,4 +858,3 @@ class When_an_event_has_bad_json(StreamReaderContext):
             r.msg == "Failed to parse json data for %s message %s"
             and r.levelno == logging.ERROR
             for r in self._log._logs))
-
