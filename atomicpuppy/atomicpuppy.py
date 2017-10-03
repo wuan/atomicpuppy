@@ -68,7 +68,9 @@ class Event:
         self.data = data
         self.stream = stream
         self.sequence = sequence
+        self._location = None
 
+    @property
     def location(self):
         """Return a string uniquely identifying the event.
 
@@ -76,11 +78,13 @@ class Event:
         attribute, which is the UUID that at time of writing doesn't let you
         easily find the event).
         """
-        return "{}/{}-{}".format(
-            self.stream,
-            self.type,
-            self.sequence,
-        )
+        if self._location is None:
+            self._location = "{}/{}-{}".format(
+                self.stream,
+                self.type,
+                self.sequence,
+            )
+        return self._location
 
     def __str__(self):
         return "{}/{}-{} ({}): {}".format(
