@@ -44,7 +44,6 @@ import yaml
 
 from atomicpuppy.errors import (
     HttpClientError,
-    HttpServerError,
     RejectedMessageException,
     UrlError,
     HttpNotFoundError,
