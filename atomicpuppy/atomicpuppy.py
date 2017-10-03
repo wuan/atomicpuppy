@@ -69,6 +69,19 @@ class Event:
         self.stream = stream
         self.sequence = sequence
 
+    def location(self):
+        """Return a string uniquely identifying the event.
+
+        This string can be used to find the event in the event store UI (cf. id
+        attribute, which is the UUID that at time of writing doesn't let you
+        easily find the event).
+        """
+        return "{}/{}-{}".format(
+            self.stream,
+            self.type,
+            self.sequence,
+        )
+
     def __str__(self):
         return "{}/{}-{} ({}): {}".format(
             self.stream,
