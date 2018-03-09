@@ -62,12 +62,13 @@ SubscriptionConfig = namedtuple('SubscriptionConfig', ['streams',
 
 class Event:
 
-    def __init__(self, id, type, data, stream, sequence):
+    def __init__(self, id, type, data, stream, sequence, metadata):
         self.id = id
         self.type = type
         self.data = data
         self.stream = stream
         self.sequence = sequence
+        self.metadata = metadata
         self._location = None
 
     @property
@@ -87,12 +88,13 @@ class Event:
         return self._location
 
     def __str__(self):
-        return "{}/{}-{} ({}): {}".format(
+        return "{}/{}-{} ({}): {} {}".format(
             self.stream,
             self.type,
             self.sequence,
             self.id,
-            self.data
+            self.data,
+            self.metadata
         )
 
 
@@ -206,6 +208,10 @@ class Page:
                 "Failed to parse json data for %s message %s",
                 e.get("eventType"), e.get("eventId"))
             return None
+        try:
+            metadata = json.loads(e["data"], encoding='UTF-8')
+        except KeyError or ValueError:
+            metadata = {}
         type = e["eventType"]
         id = UUID(e["eventId"])
         stream = e["positionStreamId"]
